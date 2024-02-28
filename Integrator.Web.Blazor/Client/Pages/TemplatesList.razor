@@ -1,0 +1,16 @@
+﻿@page "/templates"
+
+@inject HttpClient Http
+
+<TemplateEditView SearchFields="searchFields" />
+
+@code {
+    IEnumerable<KeyValuePair<int, string>>? searchFields;
+    IEnumerable<KeyValuePair<int, string>>? applyFields;
+
+    protected override async Task OnInitializedAsync()
+    {
+        searchFields = await Http.GetFromJsonAsync<IEnumerable<KeyValuePair<int, string>>>("Cards/GetAvailableSearchFields");
+        applyFields = await Http.GetFromJsonAsync<IEnumerable<KeyValuePair<int, string>>>("Cards/GetAvailableApplyFields");
+    }
+}

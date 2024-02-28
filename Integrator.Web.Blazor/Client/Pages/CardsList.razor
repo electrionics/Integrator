@@ -1,4 +1,4 @@
-﻿@page "/fetchdata"
+﻿@page "/cards"
 
 @using Integrator.Web.Blazor.Shared
 @using Syncfusion.Blazor.Grids;
@@ -24,7 +24,7 @@ else
         AllowPaging="true"
         AllowGrouping="true"
         AllowTextWrap="true"
-        AllowResizing="true"
+        @*AllowResizing="true"*@
         DataSource="@cards" 
         TValue="CardViewModel">
 
@@ -135,6 +135,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        cards = await Http.GetFromJsonAsync<CardViewModel[]>("Cards");
+        cards = await Http.GetFromJsonAsync<CardViewModel[]>("Cards/GetList");
     }
 }

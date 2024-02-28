@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Integrator.Web.Blazor.Server.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("[controller]/[action]")]
     public class CardsController : ControllerBase
     {
         private readonly ILogger<CardsController> _logger;
@@ -20,7 +20,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<CardViewModel[]> Get()
+        public async Task<CardViewModel[]> GetList()
         {
             try
             {
@@ -97,6 +97,58 @@ namespace Integrator.Web.Blazor.Server.Controllers
                 throw;
             }
         }
+
+        [HttpGet]
+        public IEnumerable<KeyValuePair<int, string>> GetAvailableSearchFields()
+        {
+            return new List<KeyValuePair<int, string>>()
+            {
+                new ((int)TemplateSearchField.SourcePath, "Исходный путь"),
+                new ((int)TemplateSearchField.RusText, "Русский текст"),
+                new ((int)TemplateSearchField.EngText, "Английский текст"),
+                new ((int)TemplateSearchField.SourceText, "Исходный текст"),
+                new ((int)TemplateSearchField.EngPath, "Английский путь"),
+                new ((int)TemplateSearchField.RusPath, "Русский путь"),
+            };
+        }
+
+        [HttpGet]
+        public IEnumerable<KeyValuePair<int, string>> GetAvailableApplyFields()
+        {
+            return new List<KeyValuePair<int, string>>
+            {
+                new((int)TemplateApplyField.Brand, "Бренд"),
+                new((int)TemplateApplyField.Size, "Размер"),
+                new((int)TemplateApplyField.Color, "Цвет"),
+                new((int)TemplateApplyField.Price, "Цена"),
+            };
+        }
+
+        [HttpPost]
+        public async Task<TemplateCheckViewModel> SaveTemplate([FromBody]TemplateViewModel model)
+        {
+            Template data;
+            if (model.Id != 0)
+            {
+                data = await dataContext.Set<Template>().FirstAsync(x => x.Id == model.Id);
+            }
+            else
+            {
+                data = new Template();
+            }
+
+            data.SearchField = (TemplateSearchField)model.SearchField;
+            data.SearchValue = model.SearchValue;
+
+            data.ApplyField = (TemplateApplyField)model.ApplyField;
+            data.ApplyValue = model.ApplyValue;
+
+            data.Order = model.ApplyOrder;
+            data.Description = model.Description;
+
+            throw new NotImplementedException();
+        }
+
 
     }
 }

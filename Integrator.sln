@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integrator.Web.Blazor.Share
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integrator.Console", "Integrator.Console\Integrator.Console.csproj", "{EE6C01D5-C48A-45C2-9BBC-40E441DF8DA5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integrator.Data", "Integrator.Data\Integrator.Data.csproj", "{118CD43B-FC31-4BD2-8B2B-3A65C6AB6FDD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integrator.Data", "Integrator.Data\Integrator.Data.csproj", "{118CD43B-FC31-4BD2-8B2B-3A65C6AB6FDD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

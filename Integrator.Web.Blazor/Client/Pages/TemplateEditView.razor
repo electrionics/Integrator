@@ -1,0 +1,140 @@
+﻿@using Integrator.Web.Blazor.Shared;
+
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.DropDowns
+
+<SfDialog Width="500px" IsModal="true" @bind-Visible="@IsVisible" ShowCloseIcon="true" ID="EditThought">
+    <DialogTemplates>
+        <Header>
+            @(IsEdit ? "Изменить" : "Добавить") запись
+        </Header>
+        <Content>
+            <div class="mb-4">
+                <label for="isRegexp" class="form-label">Тип поиска</label> <span class="oi oi-info" id="isRegexpInfo"></span>
+                <SfRadioButton Name="isRegexp" Value="False" TChecked="bool" @bind-Checked="Model.IsRegexp" Label="Строка"></SfRadioButton>
+                <SfRadioButton Name="isRegexp" Value="True" TChecked="bool" @bind-Checked="Model.IsRegexp" Label="Регулярное выражение"></SfRadioButton>
+                <SfTooltip Position="Position.TopCenter" Target="#isRegexpInfo" Content="Выберите для корректной обработки.">
+                </SfTooltip>
+            </div>
+            <div class="mb-4">
+                <label for="searchText" class="form-label">@(Model.IsRegexp ? "Регулярноое выражение поиска" : "Текст поиска")</label>
+                <input type="text" @bind="Model.SearchValue" class="form-control" id="searchText"></input>
+            </div>
+            <div class="mb-4">
+                <label for="applyValue" class="form-label">Значение для применения</label>&nbsp;
+                @{
+                    if (Model.IsRegexp)
+                    {
+                        <span class="oi oi-info" id="applyValueInfo"></span>
+                    }
+                }
+                <input type="text" @bind="Model.ApplyValue" class="form-control" id="applyValue"></input>
+                @{
+                    if (Model.IsRegexp)
+                    {
+                        <SfTooltip Position="Position.TopCenter" Target="#applyValueInfo" Content="Оставьте пустым, чтобы значение для установки свойства карточки взялось из группы регулярного выражения.">
+                        </SfTooltip>
+                    }
+                }
+            </div>
+            <div class="mb-4">
+                <label for="searchField" class="form-label">Поле поиска.</label> <span class="oi oi-info" id="searchFieldInfo"></span>
+                <SfDropDownList ID="searchField" 
+                    DataSource="SearchFields" 
+                    TValue="int" 
+                    TItem="KeyValuePair<int, string>"
+                    @bind-Value="Model.SearchField">
+                    <DropDownListFieldSettings Value="Key" Text="Value"></DropDownListFieldSettings>
+                </SfDropDownList>
+                <SfTooltip Position="Position.TopCenter" Target="#searchFieldInfo" Content="Поле, по которому будет осуществляться поиск в таблице карточек.">
+                </SfTooltip>
+            </div>
+            <div class="mb-4">
+                <label for="applyField" class="form-label">Поле для применения</label>
+                <SfDropDownList ID="applyField" 
+                    DataSource="ApplyFields" 
+                    TValue="int" 
+                    TItem="KeyValuePair<int, string>"
+                    @bind-Value="Model.ApplyField">
+                    <DropDownListFieldSettings Value="Key" Text="Value"></DropDownListFieldSettings>
+                </SfDropDownList>
+            </div>
+            <div class="mb-4">
+                <label for="Порядок применения" class="form-label">Значение для замены</label> <span class="oi oi-info" id="applyOrderInfo"></span>
+                <SfNumericTextBox Min="0" Max="1000" Step="10" TValue="int?" @bind-Value="Model.ApplyOrder" />
+                <SfTooltip Position="Position.TopCenter" Target="#applyOrderInfo" Content="Сначала применяются шаблоны с пустым порядком, затем с меньшим порядком, затем - с большим. Последний примененный шаблон, подходящий по критериям, перезаписывает результат предшествующих.">
+                </SfTooltip>
+            </div>
+            <div class="mb-4">
+                <label for="notwes" class="form-label">Заметки, описание</label>
+                <textarea @bind="Model.Description" class="form-control" id="notwes" aria-describedby="notwesHelp"></textarea>
+                <div id="notwesHelp" class="form-text">Оставьте заметки о шаблоне.</div>
+            </div>
+            <div class="mb-4">
+                <button class="btn btn-info" @onclick="CheckBtnClick">Проверить количество</button>
+            </div>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Сохранить" IsPrimary="true" CssClass="btn btn-success"
+            OnClick="SaveButtonClick"/>
+        <DialogButton Content="Отмена"
+            OnClick="CloseBtnClick"/>
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    [Parameter]
+    public IEnumerable<KeyValuePair<int, string>> SearchFields { get; set; }
+
+    [Parameter]
+    public IEnumerable<KeyValuePair<int, string>> ApplyFields { get; set; }
+
+    public bool IsVisible { get; set; } = false;
+
+    public bool IsEdit { get; set; }
+
+    public TemplateViewModel Model { get; set; }
+
+    public Action? SuccessCallback { get; set; }
+
+    public TemplateCheckViewModel CheckModel { get; set; }
+
+
+    private void CheckBtnClick()
+    {
+        throw new NotImplementedException();
+    }
+
+    private void CloseBtnClick()
+    {
+        IsVisible = false;
+    }
+
+    private async Task SaveButtonClick()
+    {
+        //var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        //var user = authstate.User;
+        //var currentUserId = UserManager.GetUserId(user);
+
+        //if (IsEdit)
+        //{
+        //    await AutomaticThoughtsService.EditAutomaticThoughtFull(Model, currentUserId);
+        //}
+        //else
+        //{
+        //    await AutomaticThoughtsService.AddAutomaticThoughtFull(Model, currentUserId);
+        //}
+
+        Model = new TemplateViewModel();
+
+        if (SuccessCallback != null)
+        {
+            SuccessCallback();
+        }
+
+        IsVisible = false;
+    }
+}

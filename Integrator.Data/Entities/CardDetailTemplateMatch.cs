@@ -8,6 +8,8 @@
 
         public string? Value { get; set; }
 
+        public int? Order { get;set; }
+
         public CardDetail? CardDetail { get; set; }
 
         public Template? Template { get; set; }

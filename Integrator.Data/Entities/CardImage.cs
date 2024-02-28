@@ -12,7 +12,7 @@
 
         public string ImageFileName { get; set; }
 
-        public int ImageFileHash { get; set; }
+        public int? ImageFileHash { get; set; }
 
 
         public Card Card { get; set; }

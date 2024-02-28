@@ -4,15 +4,15 @@
     {
         public int Id { get; set; }
 
-        public required string Search { get; set; }
+        public TemplateSearchField SearchField { get; set; }
 
-        public required string Value { get; set; }
+        public string SearchValue { get; set; }
 
-        public TemplateType Type { get; set; }
+        public TemplateApplyField ApplyField { get; set; }
 
-        public TemplateSource Source { get; set; }
+        public string? ApplyValue { get; set; }
 
-        public int Order { get; set; }
+        public int? Order { get; set; }
 
         public string? Description { get; set; }
 
@@ -24,21 +24,21 @@
         {
             get
             {
-                switch (Source)
+                switch (SearchField)
                 {
-                    case TemplateSource.SourceText:
+                    case TemplateSearchField.SourceText:
                         return c => c.TextFileContent;
-                    case TemplateSource.EngText:
+                    case TemplateSearchField.EngText:
                         return c => c.CardTranslation.ContentEng;
-                    case TemplateSource.RusText:
+                    case TemplateSearchField.RusText:
                         return c => c.CardTranslation.ContentRus;
-                    case TemplateSource.SourcePath:
+                    case TemplateSearchField.SourcePath:
                         return c => c.FolderPath;
-                    case TemplateSource.EngPath:
+                    case TemplateSearchField.EngPath:
                         return c => c.CardTranslation.TitleEng;
-                    case TemplateSource.RusPath:
+                    case TemplateSearchField.RusPath:
                         return c => c.CardTranslation.TitleRus;
-                    case TemplateSource.Info:
+                    case TemplateSearchField.Info:
                         return c => c.InfoContent;
                     default:
                         throw new NotImplementedException();
@@ -47,7 +47,7 @@
         }
     }
 
-    public enum TemplateType
+    public enum TemplateApplyField
     {
         Brand = 1,
         Price = 2,
@@ -55,7 +55,7 @@
         Size = 4
     }
 
-    public enum TemplateSource
+    public enum TemplateSearchField
     {
         SourceText = 1,
         EngText = 2,
