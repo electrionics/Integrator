@@ -1,9 +1,15 @@
 ﻿@using Integrator.Web.Blazor.Shared;
 
+@using Integrator.Web.Blazor.Shared.Common
+@using Integrator.Web.Blazor.Shared.Validators
+
 @using Syncfusion.Blazor.Inputs
 @using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.Buttons
 @using Syncfusion.Blazor.DropDowns
+
+@inject HttpClient Http
+@inject SfDialogService DialogSerivce
 
 <SfDialog Width="500px" IsModal="true" @bind-Visible="@IsVisible" ShowCloseIcon="true" ID="EditThought">
     <DialogTemplates>
@@ -11,77 +17,77 @@
             @(IsEdit ? "Изменить" : "Добавить") запись
         </Header>
         <Content>
-            <div class="mb-4">
-                <label for="isRegexp" class="form-label">Тип поиска</label> <span class="oi oi-info" id="isRegexpInfo"></span>
-                <SfRadioButton Name="isRegexp" Value="False" TChecked="bool" @bind-Checked="Model.IsRegexp" Label="Строка"></SfRadioButton>
-                <SfRadioButton Name="isRegexp" Value="True" TChecked="bool" @bind-Checked="Model.IsRegexp" Label="Регулярное выражение"></SfRadioButton>
-                <SfTooltip Position="Position.TopCenter" Target="#isRegexpInfo" Content="Выберите для корректной обработки.">
-                </SfTooltip>
-            </div>
-            <div class="mb-4">
-                <label for="searchText" class="form-label">@(Model.IsRegexp ? "Регулярноое выражение поиска" : "Текст поиска")</label>
-                <input type="text" @bind="Model.SearchValue" class="form-control" id="searchText"></input>
-            </div>
-            <div class="mb-4">
-                <label for="applyValue" class="form-label">Значение для применения</label>&nbsp;
-                @{
-                    if (Model.IsRegexp)
-                    {
-                        <span class="oi oi-info" id="applyValueInfo"></span>
-                    }
-                }
-                <input type="text" @bind="Model.ApplyValue" class="form-control" id="applyValue"></input>
-                @{
-                    if (Model.IsRegexp)
-                    {
-                        <SfTooltip Position="Position.TopCenter" Target="#applyValueInfo" Content="Оставьте пустым, чтобы значение для установки свойства карточки взялось из группы регулярного выражения.">
-                        </SfTooltip>
-                    }
-                }
-            </div>
-            <div class="mb-4">
-                <label for="searchField" class="form-label">Поле поиска.</label> <span class="oi oi-info" id="searchFieldInfo"></span>
-                <SfDropDownList ID="searchField" 
-                    DataSource="SearchFields" 
-                    TValue="int" 
-                    TItem="KeyValuePair<int, string>"
-                    @bind-Value="Model.SearchField">
-                    <DropDownListFieldSettings Value="Key" Text="Value"></DropDownListFieldSettings>
-                </SfDropDownList>
-                <SfTooltip Position="Position.TopCenter" Target="#searchFieldInfo" Content="Поле, по которому будет осуществляться поиск в таблице карточек.">
-                </SfTooltip>
-            </div>
-            <div class="mb-4">
-                <label for="applyField" class="form-label">Поле для применения</label>
-                <SfDropDownList ID="applyField" 
-                    DataSource="ApplyFields" 
-                    TValue="int" 
-                    TItem="KeyValuePair<int, string>"
-                    @bind-Value="Model.ApplyField">
-                    <DropDownListFieldSettings Value="Key" Text="Value"></DropDownListFieldSettings>
-                </SfDropDownList>
-            </div>
-            <div class="mb-4">
-                <label for="Порядок применения" class="form-label">Значение для замены</label> <span class="oi oi-info" id="applyOrderInfo"></span>
-                <SfNumericTextBox Min="0" Max="1000" Step="10" TValue="int?" @bind-Value="Model.ApplyOrder" />
-                <SfTooltip Position="Position.TopCenter" Target="#applyOrderInfo" Content="Сначала применяются шаблоны с пустым порядком, затем с меньшим порядком, затем - с большим. Последний примененный шаблон, подходящий по критериям, перезаписывает результат предшествующих.">
-                </SfTooltip>
-            </div>
-            <div class="mb-4">
-                <label for="notwes" class="form-label">Заметки, описание</label>
-                <textarea @bind="Model.Description" class="form-control" id="notwes" aria-describedby="notwesHelp"></textarea>
-                <div id="notwesHelp" class="form-text">Оставьте заметки о шаблоне.</div>
-            </div>
-            <div class="mb-4">
-                <button class="btn btn-info" @onclick="CheckBtnClick">Проверить количество</button>
-            </div>
+            <EditForm Model="Model" OnValidSubmit="SubmitButtonClick">
+
+                <FluentValidationValidator TValidator="TemplateEditViewModelValidator" />
+                <div class="mb-4">
+                    <ValidationSummary />
+                </div>
+                <div class="mb-4">
+                    <label for="isRegexp" class="form-label">Тип поиска</label> <span class="oi oi-info" id="isRegexpInfo"></span><br/>
+                    <SfRadioButton Name="isRegexp" Value="False" TChecked="bool" @bind-Checked="Model.IsRegexp" Label="Строка"></SfRadioButton><br />
+                    <SfRadioButton Name="isRegexp" Value="True" TChecked="bool" @bind-Checked="Model.IsRegexp" Label="Регулярное выражение"></SfRadioButton><br />
+                    <SfTooltip Position="Position.TopCenter" Target="#isRegexpInfo" Content="Выберите для корректной обработки.">
+                    </SfTooltip>
+                </div>
+                <div class="mb-4">
+                    <label for="searchText" class="form-label">@(Model.IsRegexp ? "Регулярное выражение поиска" : "Текст поиска")</label>
+                    <InputText @bind-Value="@Model.SearchValue" class="form-control" id="searchText"></InputText>
+                    <ValidationMessage For="@(() => Model.SearchValue)" />
+                </div>
+                <div class="mb-4">
+                    <label for="searchField" class="form-label">Поле поиска.</label> <span class="oi oi-info" id="searchFieldInfo"></span>
+                    <SfDropDownList ID="searchField"
+                                    DataSource="SearchFields"
+                                    TValue="int?"
+                                    TItem="KeyValuePair<int, string>"
+                                    @bind-Value="Model.SearchField">
+                        <DropDownListFieldSettings Value="Key" Text="Value"></DropDownListFieldSettings>
+                    </SfDropDownList>
+                    <ValidationMessage For="@(() => Model.SearchField)" />
+                    <SfTooltip Position="Position.TopCenter" Target="#searchFieldInfo" Content="Поле, по которому будет осуществляться поиск в таблице карточек.">
+                    </SfTooltip>
+                </div>
+                <div class="mb-4">
+                    <label for="applyField" class="form-label">Поле для применения</label>
+                    <SfDropDownList ID="applyField"
+                                    DataSource="ApplyFields"
+                                    TValue="int?"
+                                    TItem="KeyValuePair<int, string>"
+                                    @bind-Value="Model.ApplyField">
+                        <DropDownListFieldSettings Value="Key" Text="Value"></DropDownListFieldSettings>
+                    </SfDropDownList>
+                    <ValidationMessage For="@(() => Model.ApplyField)" />
+                </div>
+                <div class="mb-4">
+                    <label for="applyValue" class="form-label">Значение для применения</label>&nbsp;<span class="oi oi-info" id="applyValueInfo"></span>
+                    <InputText @bind-Value="@Model.ApplyValue" class="form-control" id="applyValue"/>
+                    <ValidationMessage For="@(() => Model.ApplyValue)" />
+                    <SfTooltip Position="Position.TopCenter" Target="#applyValueInfo" Content="При типе поиска 'Регулярное выражение' оставьте пустым, чтобы значение для установки свойства карточки взялось из группы регулярного выражения.">
+                    </SfTooltip>
+                </div>
+                <div class="mb-4">
+                    <label for="applyOrder" class="form-label">Порядок применения</label> <span class="oi oi-info" id="applyOrderInfo"></span>
+                    <SfNumericTextBox Min="0" Max="1000" Step="10" TValue="int?" @bind-Value="Model.ApplyOrder" ID="applyOrder" />
+                    <ValidationMessage For="@(() => Model.ApplyOrder)" />
+                    <SfTooltip Position="Position.TopCenter" Target="#applyOrderInfo" Content="Сначала применяются шаблоны с пустым порядком, затем с меньшим порядком, затем - с большим. Последний примененный шаблон, подходящий по критериям, перезаписывает результат предшествующих.">
+                    </SfTooltip>
+                </div>
+                <div class="mb-4">
+                    <label for="notwes" class="form-label">Заметки, описание</label>
+                    <InputTextArea @bind-Value="@Model.Description" class="form-control" Id="notwes" aria-describedby="notwesHelp"></InputTextArea>
+                    <ValidationMessage For="@(() => Model.Description)" />
+                    <div id="notwesHelp" class="form-text">Оставьте заметки о шаблоне.</div>
+                </div>
+                <div class="mb-4">
+                    <button type="submit" class="btn btn-info" @onclick="() => IsSave = false">Проверить количество</button>
+                </div>
+            </EditForm>
         </Content>
     </DialogTemplates>
     <DialogButtons>
-        <DialogButton Content="Сохранить" IsPrimary="true" CssClass="btn btn-success"
-            OnClick="SaveButtonClick"/>
-        <DialogButton Content="Отмена"
-            OnClick="CloseBtnClick"/>
+        <DialogButton Content="Сохранить" IsPrimary="true" Type="ButtonType.Submit" OnClick="() => IsSave = true" CssClass="btn btn-success"/>
+        <DialogButton Content="Отмена" OnClick="CloseBtnClick"/>
     </DialogButtons>
 </SfDialog>
 
@@ -96,12 +102,21 @@
 
     public bool IsEdit { get; set; }
 
-    public TemplateViewModel Model { get; set; }
+    private bool IsSave { get; set; } = true;
+
+    public TemplateEditViewModel Model { get; set; }
 
     public Action? SuccessCallback { get; set; }
 
     public TemplateCheckViewModel CheckModel { get; set; }
 
+    protected override Task OnInitializedAsync()
+    {
+        Model = new();
+        CheckModel = new();
+
+        return base.OnInitializedAsync();
+    }
 
     private void CheckBtnClick()
     {
@@ -113,28 +128,47 @@
         IsVisible = false;
     }
 
-    private async Task SaveButtonClick()
+    private async Task SubmitButtonClick()
     {
-        //var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
-        //var user = authstate.User;
-        //var currentUserId = UserManager.GetUserId(user);
-
-        //if (IsEdit)
-        //{
-        //    await AutomaticThoughtsService.EditAutomaticThoughtFull(Model, currentUserId);
-        //}
-        //else
-        //{
-        //    await AutomaticThoughtsService.AddAutomaticThoughtFull(Model, currentUserId);
-        //}
-
-        Model = new TemplateViewModel();
-
-        if (SuccessCallback != null)
+        if (IsSave)
         {
-            SuccessCallback();
-        }
+            CheckModel = await Http.PostResultAsJsonAsync<TemplateCheckViewModel, TemplateEditViewModel>(
+                "Templates/Save", Model)
+                ?? new();
 
-        IsVisible = false;
+            await ShowCheckDialog(CheckModel);
+
+            Model = new ();
+            CheckModel = new ();
+
+            if (SuccessCallback != null)
+            {
+                SuccessCallback();
+            }
+
+            IsVisible = false;
+        }
+        else
+        {
+            CheckModel = await Http.PostResultAsJsonAsync<TemplateCheckViewModel, TemplateEditViewModel>(
+                "Templates/Check", Model)
+                ?? new();
+
+            await ShowCheckDialog(CheckModel);
+
+            CheckModel = new ();
+        }
+    }
+
+    private async Task ShowCheckDialog(TemplateCheckViewModel model)
+    {
+        await DialogSerivce.AlertAsync(
+            null, 
+            "Количество карточек", new DialogOptions
+            {
+                ChildContent = @<text>
+                    Найдено поиском шаблона по базе карточек: <strong>@model.CountAffected</strong>.<br/>Будет применено алгоритмом при сохранении шаблона: <strong>@model.CountResulted</strong>.
+                </text>
+            });
     }
 }

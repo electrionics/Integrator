@@ -4,6 +4,8 @@
     {
         public int Id { get; set; }
 
+        public bool IsRegexp { get; set; }
+
         public TemplateSearchField SearchField { get; set; }
 
         public string SearchValue { get; set; }

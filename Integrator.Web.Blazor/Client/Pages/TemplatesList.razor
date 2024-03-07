@@ -1,16 +1,214 @@
 ﻿@page "/templates"
 
-@inject HttpClient Http
+@using Integrator.Web.Blazor.Shared
+@using Syncfusion.Blazor.Grids;
+@using Syncfusion.Blazor.Popups;
 
-<TemplateEditView SearchFields="searchFields" />
+@inject HttpClient Http
+@inject SfDialogService SfDialogService;
+
+<PageTitle>Созданные шаблоны</PageTitle>
+
+<h1>Созданные шаблоны</h1>
+
+<p>Созданные шаблоны для обработки карточек.</p>
+
+@if (templates == null)
+{
+    <p><em>Загрузка шаблонов...</em></p>
+}
+else
+{
+    <button class="btn btn-primary mt-2 mb-3" @onclick="AddBtnClick">
+        <i class="oi oi-plus" /> Добавить
+    </button>
+
+    <SfGrid ID="Grid"
+            AllowFiltering="true"
+            AllowSorting="true"
+            AllowPaging="true"
+            AllowGrouping="true"
+            AllowTextWrap="true"
+            DataSource="@templates"
+            TValue="TemplateItemViewModel">
+
+        <GridPageSettings PageSize="50"></GridPageSettings>
+        <GridFilterSettings Type="FilterType.Excel"></GridFilterSettings>
+        <GridColumns>
+            <GridColumn Field="@nameof(TemplateItemViewModel.Id)"
+                        HeaderText="Номер"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="false" />
+            <GridColumn Field="@nameof(TemplateItemViewModel.IsRegexp)"
+                        HeaderText="Тип поиска"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="false">
+                <Template>
+                    @{
+                        var model = (TemplateItemViewModel)context;
+                        <text>@(model.IsRegexp ? "Регулярное выражение" : "Строка")</text>
+                    }
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(TemplateItemViewModel.SearchField)"
+                        HeaderText="Поле поиска"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="true">
+                <Template>
+                    @{
+                        var model = (TemplateItemViewModel)context;
+                        <text>@(searchFields?.FirstOrDefault(x => x.Key == model.SearchField).Value)</text>
+                    }
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(TemplateItemViewModel.SearchValue)"
+                        HeaderText="Значение поиска"
+                        Width="150"
+                        AllowFiltering="true"
+                        AllowGrouping="true">
+            </GridColumn>          
+            <GridColumn Field="@nameof(TemplateItemViewModel.ApplyField)"
+                        HeaderText="Поле для применения"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="true">
+                <Template>
+                    @{
+                        var model = (TemplateItemViewModel)context;
+                        <text>@(applyFields?.FirstOrDefault(x => x.Key == model.ApplyField).Value)</text>
+                    }
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(TemplateItemViewModel.ApplyValue)"
+                        HeaderText="Применяемое значение"
+                        Width="150"
+                        AllowFiltering="true"
+                        AllowGrouping="true">
+                <Template>
+                    @{
+                        var model = (TemplateItemViewModel)context;
+                        <text>@(model.IsRegexp && string.IsNullOrEmpty(model.ApplyValue) ? "<<значение группы>>" : model.ApplyValue)</text>
+                    }
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(TemplateItemViewModel.ApplyOrder)"
+                        HeaderText="Порядок применения"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="true" />
+            <GridColumn Field="@nameof(TemplateItemViewModel.Description)"
+                        HeaderText="Описание"
+                        Width="200"
+                        AllowFiltering="true"
+                        AllowGrouping="true">
+            </GridColumn>
+            <GridColumn Field="@nameof(TemplateItemViewModel.CheckViewModel.CountAffected)"
+                        HeaderText="Количество совпадений"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="true" />
+            <GridColumn Field="@nameof(TemplateItemViewModel.CheckViewModel.CountResulted)"
+                        HeaderText="Количество применений"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="true">
+            </GridColumn>
+            <GridColumn HeaderText="Действия"
+                        Width="100">
+                        <Template>
+                            @{
+                                var model = (TemplateItemViewModel)context;
+                            }
+                            <button class="btn btn-danger" @onclick="@(async () => await DeleteBtnClick(model.Id))">
+                                <i class="oi oi-trash" /> Удалить
+                            </button>
+                        </Template>
+            </GridColumn>
+        </GridColumns>
+    </SfGrid>
+
+    <TemplateEditView @ref="TemplateEditView" SearchFields="searchFields" ApplyFields="applyFields" />
+}
 
 @code {
-    IEnumerable<KeyValuePair<int, string>>? searchFields;
-    IEnumerable<KeyValuePair<int, string>>? applyFields;
+    private TemplateEditView TemplateEditView;
+
+    IEnumerable<KeyValuePair<int, string>> searchFields;
+    IEnumerable<KeyValuePair<int, string>> applyFields;
+    private IEnumerable<TemplateItemViewModel>? templates;
 
     protected override async Task OnInitializedAsync()
     {
-        searchFields = await Http.GetFromJsonAsync<IEnumerable<KeyValuePair<int, string>>>("Cards/GetAvailableSearchFields");
-        applyFields = await Http.GetFromJsonAsync<IEnumerable<KeyValuePair<int, string>>>("Cards/GetAvailableApplyFields");
+        searchFields = await Http.GetFromJsonAsync<IEnumerable<KeyValuePair<int, string>>>("Templates/GetAvailableSearchFields");
+        applyFields = await Http.GetFromJsonAsync<IEnumerable<KeyValuePair<int, string>>>("Templates/GetAvailableApplyFields");
+
+        templates = await Http.GetFromJsonAsync<IEnumerable<TemplateItemViewModel>>("Templates/GetList");
+    }
+
+    private void AddBtnClick()
+    {
+        if (TemplateEditView.IsEdit == true)
+        {
+            TemplateEditView.Model = new TemplateEditViewModel();
+            TemplateEditView.CheckModel = new TemplateCheckViewModel();
+        }
+
+        TemplateEditView.IsEdit = false;
+        TemplateEditView.IsVisible = true;
+        TemplateEditView.SuccessCallback = async () => await Refresh();
+    }
+
+    private async Task EditBtnClick(int id)
+    {
+        var model = await Http.GetFromJsonAsync<TemplateEditViewModel>("Templates/Get");
+        if (model != null)
+        {
+            TemplateEditView.Model = model;
+            TemplateEditView.IsEdit = true;
+            TemplateEditView.IsVisible = true;
+            TemplateEditView.SuccessCallback = async () => await Refresh();
+        }
+        else
+        {
+            await SfDialogService.PromptAsync("Запись не найдена.");
+        }
+    }
+
+    private async Task DeleteBtnClick(int id)
+    {
+        var confirmed = await SfDialogService.ConfirmAsync("Вы действительно хотите удалить шаблон?", "Подтверждение действия", new()
+            {
+                ShowCloseIcon = true,
+                PrimaryButtonOptions = new()
+                {
+                    IconCss = "oi oi-trash"
+                },
+                CancelButtonOptions = new()
+                {
+                    Content = "Отмена",
+                }
+            });
+
+        if (confirmed)
+        {
+            var successResponse = await Http.PostAsync($"Templates/Delete/{id}", null);
+
+            if (bool.TryParse(await successResponse.Content.ReadAsStringAsync(), out var success) && success)
+            {
+                await SfDialogService.PromptAsync("Запись успешно удалена.");
+            }
+            else
+            {
+                await SfDialogService.PromptAsync("Произошла ошибка при удалении.");
+            }
+        }
+    }
+
+    private async Task Refresh()
+    {
+        templates = await Http.GetFromJsonAsync<IEnumerable<TemplateItemViewModel>>("Templates/GetList");
     }
 }

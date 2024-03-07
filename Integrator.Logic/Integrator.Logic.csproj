@@ -6,4 +6,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Google.Cloud.Translate.V3" Version="3.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Integrator.Data\Integrator.Data.csproj" />
+    <ProjectReference Include="..\Integrator.Shared\Integrator.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

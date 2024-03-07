@@ -1,51 +1,70 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using Microsoft.EntityFrameworkCore;
-
 using Integrator.Data;
-using Integrator.Data.Entities;
 using Integrator.Data.Helpers;
 using Integrator.Shared;
 using Integrator.Logic;
 
-Console.WriteLine("Выберите процедуру для выполнения (1 - обработка шаблонами, 2 - перевод, пусто - выход, остальное - тест):");
-switch (Console.ReadLine())
+// Магазины:
+//  'hanguang'
+//  'weiyishang'
+//  'xiezou'
+//  'xiezou2'
+//  '千衣颂105A栋3楼330    号码YM22670449'
+//  'Магазин 1 - 千亿服饰3001档-№1-20240215T202614Z-001'
+
+
+Console.WriteLine("Выберите процедуру для выполнения:\n" +
+    "1 - обработка шаблонами, \n" +
+    "2 - перевод, \n" +
+    "3 - загрузка карточек магазина в БД,\n" +
+    "4 - создание новых черновиков для брендов и категорий,\n" +
+    "5 - первичная разметка карточек брендами и категориями,\n" +
+    "\n" +
+    "пусто - выход\n, " +
+    "остальное - тест.\n");
+Console.Write("Мой выбор: ");
+var userValue = Console.ReadLine();
+switch (userValue)
 {
     case "1":
+        WriteUserChoose(userValue, "обработка шаблонами");
         await CallProcessDatabaseWithTemplates();
         break;
     case "2":
+        WriteUserChoose(userValue, "перевод");
         await CallTranslateDatabase();
         break;
     case "3":
+        WriteUserChoose(userValue, "загрузка карточек магазина в БД");
         Console.WriteLine("Имя магазина:");
-#pragma warning disable CS8604 // Possible null reference argument.
-        await CallLoadShop(shopName: Console.ReadLine());
-#pragma warning restore CS8604 // Possible null reference argument.
-
-        //  'hanguang'
-        //  'weiyishang'
-        //  'xiezou'
-        //  'xiezou2'
-        //  '千衣颂105A栋3楼330    号码YM22670449'
-        //  'Магазин 1 - 千亿服饰3001档-№1-20240215T202614Z-001'
-
+        await CallLoadShop(shopName: Console.ReadLine() ?? string.Empty);
         break;
     case "4":
-
+        WriteUserChoose(userValue, "создание новых черновиков для брендов и категорий");
+        await CallCreateToponomyDrafts();
+        break;
+    case "5":
+        WriteUserChoose(userValue, "первичная разметка карточек брендами и категориями");
+        await CallMarkCardsWithToponomyItems();
         break;
     case "":
+        WriteUserChoose(userValue, "выход");
         return;
     default:
-        await Test();
+        WriteUserChoose(userValue ?? "", "тест");
+        await CallTest();
         break;
 }
-
-await CreateToponomyDrafts();
                     
 return;
 
-static async Task Test()
+static void WriteUserChoose(string userValue, string procedureName)
+{
+    Console.WriteLine($"Выбрано значение: {userValue}. Запущена процедура '{procedureName}'.");
+}
+
+static async Task CallTest()
 {
     string text = "𝐌𝐢𝐮𝐦𝐢 𝐱 𝐧𝐞𝐰 𝐁𝐚𝐥𝐚𝐧𝐜";
     foreach (char c in text)
@@ -63,137 +82,32 @@ static async Task Test()
     //    .ToListAsync())
     //    .Select(x => new BrandDraft(x))
     //    .ToList();
+
+    await Task.CompletedTask;
 }
 
-// следующие два региона надо заменить на логику шаблонов в будущем
 
-#region Создание новых черновиков для категорий и брендов
+#region Вызовы логики по обработке данных
 
-static async Task CreateToponomyDrafts()
+static async Task CallCreateToponomyDrafts()
 {
-    Console.WriteLine($"Process Cards: category drafts and brand drafts");
+    var logic = new ToponomyLogic(GetDataContext(), GetLoggerDecorator());
 
-    using var dataContext = GetDataContext();
-    var categoryCandidates = (await dataContext.Set<Card>()
-        .AsNoTracking()
-        .ToListAsync())
-        .GroupBy(x => StringHelper.GetParentFolder(x.FolderPath, x.FolderName))
-        .Select(x => new CategoryDraft(x.First()))
-        .Where(x => x.IsAcceptable)
-        .ToList();
+    await logic.CreateToponomyDrafts();
 
-    var categoryDraftsExisting = await dataContext.Set<CategoryDraft>()
-        .AsNoTracking()
-        .Select(x => x.Name)
-        .ToListAsync();
-
-    var categoryDraftsToAdd = categoryCandidates
-        .Where(x => !categoryDraftsExisting.Contains(x.Name))
-        .ToList();
-
-    await dataContext.Set<CategoryDraft>().AddRangeAsync(categoryDraftsToAdd);
-
-    // same as category
-    var brandCandidates = (await dataContext.Set<Card>()
-        .AsNoTracking()
-        .ToListAsync())
-        .GroupBy(x => StringHelper.GetParentFolder(x.FolderPath, x.FolderName))
-        .Select(x => new BrandDraft(x.First()))
-        .Where(x => x.IsAcceptable)
-        .ToList();
-
-    var brandDraftsExisting = await dataContext.Set<BrandDraft>()
-        .AsNoTracking()
-        .Select(x => x.Name)
-        .ToListAsync();
-
-    var brandDraftsToAdd = brandCandidates
-        .Where(x => !brandDraftsExisting.Contains(x.Name))
-        .ToList();
-
-    await dataContext.Set<BrandDraft>().AddRangeAsync(brandDraftsToAdd);
-
-    await dataContext.SaveChangesAsync();
-}
-
-#endregion
-
-#region Размечение брендов и категорий для карточек
-
-// Размечение брендов и категорий для карточек исходя из путей и одинаковых текстов карточек.
-static async Task MarkCardsWithToponomyItems()
-{
-    using var dataContext = GetDataContext();
-    var cards = await dataContext.Set<Card>()
-        .Include(x => x.CardDetail)
-        .ToListAsync();
-
-    var categoryDrafts = await dataContext.Set<CategoryDraft>()
-        .AsNoTracking()
-        .Include(x => x.Card)
-        .Where(x => x.CategoryId != null)
-        .ToListAsync();
-    
-    var brandDrafts = await dataContext.Set<BrandDraft>()
-        .AsNoTracking()
-        .Include(x => x.Card)
-        .Where(x => x.BrandId != null)
-        .ToListAsync();
-
-    var counterBrands = 0;
-    var counterCategories = 0;
-
-    foreach (var card in cards)
-    {
-        if (card.CardDetail == null)
-        {
-            card.CardDetail = new();
-        }
-    }
-
-    foreach (var draft in categoryDrafts)
-    {
-        foreach (var card in cards.Where(x => new CategoryDraft(x).Name == draft.Name))
-        {
-            card.CardDetail.CategoryId = draft.CategoryId;
-            counterCategories++;
-        }
-    }
-    foreach (var draft in brandDrafts)
-    {
-        foreach (var card in cards.Where(x => new BrandDraft(x).Name == draft.Name))
-        {
-            card.CardDetail.BrandId = draft.BrandId;
-            counterBrands++;
-        }
-    }
-
-
-    foreach (var draft in brandDrafts)
-    {
-        foreach (var card in cards.Where(x => x.CardDetail.BrandId == null && x.TextFileContent == draft.Card.TextFileContent))
-        {
-            card.CardDetail.BrandId = draft.BrandId;
-            counterBrands++;
-        }
-    }
-    foreach (var draft in categoryDrafts)
-    {
-        foreach (var card in cards.Where(x => x.CardDetail.CategoryId == null && x.TextFileContent == draft.Card.TextFileContent))
-        {
-            card.CardDetail.CategoryId = draft.CategoryId;
-            counterCategories++;
-        }
-    }
-
-    Console.WriteLine($"categories {counterCategories}, brands {counterBrands}");
+    Console.WriteLine("Press any key");
     Console.ReadLine();
-
-    await dataContext.SaveChangesAsync();
 }
 
-#endregion
+static async Task CallMarkCardsWithToponomyItems()
+{
+    var logic = new ToponomyLogic(GetDataContext(), GetLoggerDecorator());
 
+    await logic.MarkCardsWithToponomyItems();
+
+    Console.WriteLine("Press any key");
+    Console.ReadLine();
+}
 
 static async Task CallLoadShop(string shopName)
 {
@@ -224,6 +138,9 @@ static async Task CallTranslateDatabase()
     Console.WriteLine("Press any key");
     Console.ReadLine();
 }
+
+#endregion
+
 
 #region Вспомогательные методы
 

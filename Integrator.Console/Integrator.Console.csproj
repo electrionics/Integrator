@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Integrator.Data\Integrator.Data.csproj" />
+    <ProjectReference Include="..\Integrator.Logic\Integrator.Logic.csproj" />
+    <ProjectReference Include="..\Integrator.Shared\Integrator.Shared.csproj" />
   </ItemGroup>
 
 </Project>

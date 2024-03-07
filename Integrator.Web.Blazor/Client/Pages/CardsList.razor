@@ -14,7 +14,7 @@
 
 @if (cards == null)
 {
-    <p><em>Загрузка...</em></p>
+    <p><em>Загрузка карточек...</em></p>
 }
 else
 {
@@ -24,7 +24,6 @@ else
         AllowPaging="true"
         AllowGrouping="true"
         AllowTextWrap="true"
-        @*AllowResizing="true"*@
         DataSource="@cards" 
         TValue="CardViewModel">
 

@@ -1,9 +1,9 @@
-﻿using Integrator.Data;
+﻿using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
+
+using Integrator.Data;
 using Integrator.Data.Entities;
 using Integrator.Shared;
-using Microsoft.EntityFrameworkCore;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
 
 namespace Integrator.Logic
 {
@@ -54,6 +54,7 @@ namespace Integrator.Logic
                             Value = processingResult.value
                         };
 
+                        // TODO: пересмотреть условие
                         if (!card.CardDetail.TemplateMatches.Any(x =>
                             x.TemplateId == matching.TemplateId))
                         {
@@ -75,48 +76,69 @@ namespace Integrator.Logic
             }
 
             await dataContext.SaveChangesAsync();
-
         }
 
 
         #region Вспомогательные методы
 
-        private static (bool matched, string? value) ProcessCardWithTemplate(Card card, Template template, List<Size> allSizes, List<Brand> allBrands)
+        private (bool matched, string? value) ProcessCardWithTemplate(Card card, Template template, List<Size> allSizes, List<Brand> allBrands)
         {
             bool isSuccess;
+            string? applyValue = null;
 
-            Match match = null;
-            var isRegex = template.ApplyField == TemplateApplyField.Price;
+            #region Поиск по тексту и получение применяемого значения
 
-            if (isRegex)
+            if (template.IsRegexp)
             {
                 Regex templateRegex = new(template.SearchValue);
-                match = templateRegex.Match(template.GetCardText(card));
+                var match = templateRegex.Match(template.GetCardText(card));
+
+                if (template.ApplyValue == null)
+                {
+                    if (match?.Groups.Count >= 2)
+                    {
+                        applyValue = match?.Groups[1].Value;
+                    }
+                    else
+                    {
+                        logger.WriteLine(
+                                $"Карточка {card.Id}. " +
+                                $"Шаблон {template.Id}. " +
+                                $"Регулярное '{template.SearchValue}' выражение не содержит групп.");
+                    }
+                }
+                else
+                {
+                    applyValue = template.ApplyValue;
+                }
 
                 isSuccess = match.Success;
             }
             else
             {
+                applyValue = template.ApplyValue;
                 isSuccess = template
                     .GetCardText(card)
                     .Contains(template.SearchValue, StringComparison.InvariantCultureIgnoreCase);
             }
+
+            #endregion
 
             if (isSuccess)
             {
                 switch (template.ApplyField)
                 {
                     case TemplateApplyField.Price:
-                        if (decimal.TryParse(match?.Groups[1].Value, out var price)) // 1 group must be here TODO: debug
+                        if (decimal.TryParse(applyValue, out var price)) // 1 group must be here TODO: debug
                         {
                             return (true, price.ToString());
                         }
                         else
                         {
-                            Debug.WriteLine(
+                            logger.WriteLine(
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
-                                $"Значение '{match.Groups[0].Value}' не подходит для цены.");
+                                $"Значение '{applyValue}' не подходит для цены.");
 
                             return (false, null);
                         }
@@ -125,32 +147,31 @@ namespace Integrator.Logic
 
                         if (newBrand == null)
                         {
-                            Debug.WriteLine(
+                            logger.WriteLine(
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
-                                $"Бренд с именем '{template.ApplyValue}' не найден в базе");
+                                $"Бренд с именем '{applyValue}' не найден в базе");
                             return (false, null);
                         }
 
                         return (true, newBrand.Id.ToString());
                     case TemplateApplyField.Color:
-                        return (true, template.ApplyValue);
-                        break;
+                        return (true, applyValue);
                     case TemplateApplyField.Size:
                         List<decimal> templateSetSizeValues;
                         try
                         {
-                            templateSetSizeValues = template.ApplyValue
+                            templateSetSizeValues = applyValue
                                 .Split(',')
                                 .Select(decimal.Parse)
                                 .ToList(); // semicolon-seperated values must be here
                         }
                         catch (FormatException)
                         {
-                            Debug.WriteLine(
+                            logger.WriteLine(
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
-                                $"Размеры шаблона не могут быть распознаны: '{template.ApplyValue}'");
+                                $"Размеры шаблона не могут быть распознаны: '{applyValue}'");
                             return (false, null);
                         }
 
@@ -177,7 +198,7 @@ namespace Integrator.Logic
             return (false, null);
         }
 
-        private static void SetTemplateMatchingValue(Card card, Template template, string? matchingValue)
+        private void SetTemplateMatchingValue(Card card, Template template, string? matchingValue)
         {
             if (!string.IsNullOrEmpty(matchingValue))
             {
@@ -186,7 +207,7 @@ namespace Integrator.Logic
                     case TemplateApplyField.Price:
 
                         var price = decimal.Parse(matchingValue);
-                        Debug.WriteLineIf(card.CardDetail.Price != null && card.CardDetail.Price != price,
+                        logger.WriteLineIf(card.CardDetail.Price != null && card.CardDetail.Price != price,
                             $"Карточка {card.Id}. " +
                             $"Шаблон {template.Id}. " +
                             $"Значение цены {card.CardDetail.Price} перезаписано новым значением {price}.");
@@ -195,7 +216,7 @@ namespace Integrator.Logic
                         break;
                     case TemplateApplyField.Brand:
                         var newBrandId = int.Parse(matchingValue);
-                        Debug.WriteLineIf(card.CardDetail.BrandId != null
+                        logger.WriteLineIf(card.CardDetail.BrandId != null
                             && newBrandId != card.CardDetail.BrandId,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
@@ -204,7 +225,7 @@ namespace Integrator.Logic
                         card.CardDetail.BrandId = newBrandId;
                         break;
                     case TemplateApplyField.Color:
-                        Debug.WriteLineIf(card.CardDetail.Color != matchingValue,
+                        logger.WriteLineIf(card.CardDetail.Color != matchingValue,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
                                 $"Цвет '{card.CardDetail.Color}' перезаписан новым значением '{matchingValue}'");
@@ -231,7 +252,7 @@ namespace Integrator.Logic
 
                         var afterCount = card.CardDetail.CardDetailSizes.Count;
 
-                        Debug.WriteLineIf(beforeCount + newCount != afterCount,
+                        logger.WriteLineIf(beforeCount + newCount != afterCount,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
                                 $"Размеры пересекаются! Количество размеров до изменения: {beforeCount}, новых: {newCount}, после изменения: {afterCount}");

@@ -1,6 +1,7 @@
+using FluentValidation;
 using Integrator.Data;
 using Integrator.Web.Blazor.Server;
-using Microsoft.AspNetCore.ResponseCompression;
+using Integrator.Web.Blazor.Shared.Validators;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +16,8 @@ builder.Services.AddDbContext<IntegratorDataContext>((options) =>
 {
     options.UseSqlServer(databaseConfig?.ConnectionString);
 });
+
+builder.Services.AddValidatorsFromAssemblyContaining<TemplateEditViewModelValidator>();
 
 var app = builder.Build();
 

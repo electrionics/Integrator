@@ -1,8 +1,10 @@
-﻿using Integrator.Data;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+using Integrator.Data;
 using Integrator.Data.Entities;
 using Integrator.Web.Blazor.Shared;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+
 
 namespace Integrator.Web.Blazor.Server.Controllers
 {
@@ -97,58 +99,6 @@ namespace Integrator.Web.Blazor.Server.Controllers
                 throw;
             }
         }
-
-        [HttpGet]
-        public IEnumerable<KeyValuePair<int, string>> GetAvailableSearchFields()
-        {
-            return new List<KeyValuePair<int, string>>()
-            {
-                new ((int)TemplateSearchField.SourcePath, "Исходный путь"),
-                new ((int)TemplateSearchField.RusText, "Русский текст"),
-                new ((int)TemplateSearchField.EngText, "Английский текст"),
-                new ((int)TemplateSearchField.SourceText, "Исходный текст"),
-                new ((int)TemplateSearchField.EngPath, "Английский путь"),
-                new ((int)TemplateSearchField.RusPath, "Русский путь"),
-            };
-        }
-
-        [HttpGet]
-        public IEnumerable<KeyValuePair<int, string>> GetAvailableApplyFields()
-        {
-            return new List<KeyValuePair<int, string>>
-            {
-                new((int)TemplateApplyField.Brand, "Бренд"),
-                new((int)TemplateApplyField.Size, "Размер"),
-                new((int)TemplateApplyField.Color, "Цвет"),
-                new((int)TemplateApplyField.Price, "Цена"),
-            };
-        }
-
-        [HttpPost]
-        public async Task<TemplateCheckViewModel> SaveTemplate([FromBody]TemplateViewModel model)
-        {
-            Template data;
-            if (model.Id != 0)
-            {
-                data = await dataContext.Set<Template>().FirstAsync(x => x.Id == model.Id);
-            }
-            else
-            {
-                data = new Template();
-            }
-
-            data.SearchField = (TemplateSearchField)model.SearchField;
-            data.SearchValue = model.SearchValue;
-
-            data.ApplyField = (TemplateApplyField)model.ApplyField;
-            data.ApplyValue = model.ApplyValue;
-
-            data.Order = model.ApplyOrder;
-            data.Description = model.Description;
-
-            throw new NotImplementedException();
-        }
-
 
     }
 }
