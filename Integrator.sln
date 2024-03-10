@@ -13,9 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integrator.Console", "Integ
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integrator.Data", "Integrator.Data\Integrator.Data.csproj", "{118CD43B-FC31-4BD2-8B2B-3A65C6AB6FDD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integrator.Logic", "Integrator.Logic\Integrator.Logic.csproj", "{DAB5F668-9B3F-4909-8491-8C2848674F43}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integrator.Logic", "Integrator.Logic\Integrator.Logic.csproj", "{DAB5F668-9B3F-4909-8491-8C2848674F43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integrator.Shared", "Integrator.Shared\Integrator.Shared.csproj", "{DC947DE4-B824-4BCC-9E09-099C40A90B2C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integrator.Shared", "Integrator.Shared\Integrator.Shared.csproj", "{DC947DE4-B824-4BCC-9E09-099C40A90B2C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

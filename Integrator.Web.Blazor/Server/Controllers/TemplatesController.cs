@@ -5,12 +5,11 @@ using Integrator.Data;
 using Integrator.Data.Entities;
 using Integrator.Web.Blazor.Shared;
 using FluentValidation;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Integrator.Web.Blazor.Server.Controllers
 {
     [ApiController]
-    [Route("[controller]/[action]/{id?}")] // TODO: внимание, не проверялось
+    [Route("[controller]/[action]/{id?}")]
     public class TemplatesController : ControllerBase
     {
         private readonly ILogger<CardsController> _logger;
@@ -106,6 +105,19 @@ namespace Integrator.Web.Blazor.Server.Controllers
             template.ApplyValue = model.ApplyValue;
 
             template.Order = model.ApplyOrder;
+
+            return await CheckInternal(template);
+        }
+
+        [HttpGet]
+        public async Task<TemplateCheckViewModel?> CheckExisting(int id)
+        {
+            var template = await dataContext.Set<Template>().FirstOrDefaultAsync(x => x.Id == id);
+
+            if (template == null)
+            {
+                return null;
+            }
 
             return await CheckInternal(template);
         }

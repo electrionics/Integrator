@@ -1,0 +1,60 @@
+﻿@page "/commands"
+
+@using Syncfusion.Blazor.Buttons
+
+@inject HttpClient Http
+
+<h3>Командный центр</h3>
+
+<button class="btn btn-primary" @onclick="@(async () => await RunShopDirectoriesSync())">
+    <i class="oi oi-folder" /> Запустить синхронизацию папок
+</button>
+<br />
+<br />
+<button class="btn btn-primary" @onclick="@(async () => await RunTranslations())">
+    <i class="oi oi-info" /> Запустить перевод новых карточек
+</button>
+<br />
+<br />
+<button class="btn btn-primary" @onclick="@(async () => await RunRecalculation())">
+    <i class="oi oi-reload" /> Запустить шаблоны
+</button>
+<br />
+<br />
+<button class="btn btn-primary" @onclick="@(async () => await RunReplacements())">
+    <i class="oi oi-command" /> Запустить замены в тексте
+</button>
+<br />
+<br />
+<button class="btn btn-primary" @onclick="@(async () => await RunSameCards())">
+    <i class="oi oi-image" /> Запустить поиск одинаковых товаров
+</button>
+<br />
+<br />
+
+@code {
+    private async Task RunRecalculation()
+    {
+        await Http.PostAsync("Templates/Recalculate", null);
+    }
+
+    private async Task RunReplacements()
+    {
+        await Http.PostAsync("Replacements/Recalculate", null);
+    }
+
+    private async Task RunShopDirectoriesSync()
+    {
+        await Task.CompletedTask;
+    }
+
+    private async Task RunTranslations()
+    {
+        await Task.CompletedTask;
+    }
+
+    private async Task RunSameCards()
+    {
+        await Task.CompletedTask;
+    }
+}

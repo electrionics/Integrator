@@ -20,10 +20,11 @@
 else
 {
     <button class="btn btn-primary mt-2 mb-3" @onclick="AddBtnClick">
-        <i class="oi oi-plus" /> Добавить
+        <i class="oi oi-plus" /> Добавить шаблон
     </button>
 
     <SfGrid ID="Grid"
+            @ref="DataGrid"
             AllowFiltering="true"
             AllowSorting="true"
             AllowPaging="true"
@@ -106,26 +107,29 @@ else
                         AllowGrouping="true">
             </GridColumn>
             <GridColumn Field="@nameof(TemplateItemViewModel.CheckViewModel.CountAffected)"
-                        HeaderText="Количество совпадений"
+                        HeaderText="Кол-во совпадений"
                         Width="100"
                         AllowFiltering="true"
                         AllowGrouping="true" />
             <GridColumn Field="@nameof(TemplateItemViewModel.CheckViewModel.CountResulted)"
-                        HeaderText="Количество применений"
+                        HeaderText="Кол-во применений"
                         Width="100"
                         AllowFiltering="true"
                         AllowGrouping="true">
             </GridColumn>
             <GridColumn HeaderText="Действия"
                         Width="100">
-                        <Template>
-                            @{
-                                var model = (TemplateItemViewModel)context;
-                            }
-                            <button class="btn btn-danger" @onclick="@(async () => await DeleteBtnClick(model.Id))">
-                                <i class="oi oi-trash" /> Удалить
-                            </button>
-                        </Template>
+                <Template>
+                    @{
+                        var model = (TemplateItemViewModel)context;
+                    }
+                    <button class="btn btn-success" @onclick="@(async () => await EditBtnClick(model.Id))">
+                        <i class="oi oi-pencil" /> Изменить
+                    </button>
+                    <button class="btn btn-danger" @onclick="@(async () => await DeleteBtnClick(model.Id))">
+                        <i class="oi oi-trash" /> Удалить
+                    </button>
+                </Template>
             </GridColumn>
         </GridColumns>
     </SfGrid>
@@ -134,6 +138,7 @@ else
 }
 
 @code {
+    private SfGrid<TemplateItemViewModel> DataGrid;
     private TemplateEditView TemplateEditView;
 
     IEnumerable<KeyValuePair<int, string>> searchFields;
@@ -154,6 +159,7 @@ else
         {
             TemplateEditView.Model = new TemplateEditViewModel();
             TemplateEditView.CheckModel = new TemplateCheckViewModel();
+            TemplateEditView.CheckExistingModel = new TemplateCheckViewModel();
         }
 
         TemplateEditView.IsEdit = false;
@@ -163,7 +169,7 @@ else
 
     private async Task EditBtnClick(int id)
     {
-        var model = await Http.GetFromJsonAsync<TemplateEditViewModel>("Templates/Get");
+        var model = await Http.GetFromJsonAsync<TemplateEditViewModel>($"Templates/Get/{id}");
         if (model != null)
         {
             TemplateEditView.Model = model;
@@ -173,12 +179,20 @@ else
         }
         else
         {
-            await SfDialogService.PromptAsync("Запись не найдена.");
+            await SfDialogService.AlertAsync("Запись не найдена.");
         }
     }
 
     private async Task DeleteBtnClick(int id)
     {
+        var checkModel = await Http.GetFromJsonAsync<TemplateCheckViewModel>($"Templates/CheckExisting/{id}");
+
+        if (checkModel == null)
+        {
+            await SfDialogService.AlertAsync("Запись не найдена.");
+            return;
+        }
+
         var confirmed = await SfDialogService.ConfirmAsync("Вы действительно хотите удалить шаблон?", "Подтверждение действия", new()
             {
                 ShowCloseIcon = true,
@@ -189,7 +203,11 @@ else
                 CancelButtonOptions = new()
                 {
                     Content = "Отмена",
-                }
+                },
+                ChildContent = @<text>
+                                    Найдено поиском шаблона по базе карточек: <strong>@checkModel.CountAffected</strong>.<br />
+                                    Будет применено алгоритмом при сохранении шаблона: <strong>@checkModel.CountResulted</strong>.
+                                </text>
             });
 
         if (confirmed)
@@ -198,11 +216,12 @@ else
 
             if (bool.TryParse(await successResponse.Content.ReadAsStringAsync(), out var success) && success)
             {
-                await SfDialogService.PromptAsync("Запись успешно удалена.");
+                await SfDialogService.AlertAsync("Запись успешно удалена.");
+                await Refresh();
             }
             else
             {
-                await SfDialogService.PromptAsync("Произошла ошибка при удалении.");
+                await SfDialogService.AlertAsync("Произошла ошибка при удалении.");
             }
         }
     }
@@ -210,5 +229,7 @@ else
     private async Task Refresh()
     {
         templates = await Http.GetFromJsonAsync<IEnumerable<TemplateItemViewModel>>("Templates/GetList");
+        await InvokeAsync(StateHasChanged);
+        await DataGrid.Refresh();
     }
 }

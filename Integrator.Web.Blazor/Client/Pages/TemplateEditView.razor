@@ -17,7 +17,7 @@
             @(IsEdit ? "Изменить" : "Добавить") запись
         </Header>
         <Content>
-            <EditForm Model="Model" OnValidSubmit="SubmitButtonClick">
+            <EditForm id="TemplateForm" Model="Model" OnValidSubmit="SubmitButtonClick">
 
                 <FluentValidationValidator TValidator="TemplateEditViewModelValidator" />
                 <div class="mb-4">
@@ -79,14 +79,22 @@
                     <ValidationMessage For="@(() => Model.Description)" />
                     <div id="notwesHelp" class="form-text">Оставьте заметки о шаблоне.</div>
                 </div>
+                @{
+                    if (IsEdit)
+                    {
+                        <div class="mb-4">
+                            <button type="submit" class="btn btn-info" @onclick="() => Type = SubmitType.CheckExisting">Проверить количество (старая версия)</button>
+                        </div>
+                    }
+                }
                 <div class="mb-4">
-                    <button type="submit" class="btn btn-info" @onclick="() => IsSave = false">Проверить количество</button>
+                    <button type="submit" class="btn btn-info" @onclick="() => Type = SubmitType.CheckNew">Проверить количество (новая версия)</button>
                 </div>
             </EditForm>
         </Content>
     </DialogTemplates>
     <DialogButtons>
-        <DialogButton Content="Сохранить" IsPrimary="true" Type="ButtonType.Submit" OnClick="() => IsSave = true" CssClass="btn btn-success"/>
+        <DialogButton Content="Сохранить" form="TemplateForm" IsPrimary="true" Type="ButtonType.Submit" OnClick="() => Type = SubmitType.Save" CssClass="btn btn-success" />
         <DialogButton Content="Отмена" OnClick="CloseBtnClick"/>
     </DialogButtons>
 </SfDialog>
@@ -102,13 +110,15 @@
 
     public bool IsEdit { get; set; }
 
-    private bool IsSave { get; set; } = true;
+    private SubmitType Type { get; set; } = SubmitType.Save;
 
     public TemplateEditViewModel Model { get; set; }
 
     public Action? SuccessCallback { get; set; }
 
     public TemplateCheckViewModel CheckModel { get; set; }
+
+    public TemplateCheckViewModel CheckExistingModel { get; set; }
 
     protected override Task OnInitializedAsync()
     {
@@ -118,11 +128,6 @@
         return base.OnInitializedAsync();
     }
 
-    private void CheckBtnClick()
-    {
-        throw new NotImplementedException();
-    }
-
     private void CloseBtnClick()
     {
         IsVisible = false;
@@ -130,7 +135,7 @@
 
     private async Task SubmitButtonClick()
     {
-        if (IsSave)
+        if (Type == SubmitType.Save)
         {
             CheckModel = await Http.PostResultAsJsonAsync<TemplateCheckViewModel, TemplateEditViewModel>(
                 "Templates/Save", Model)
@@ -140,6 +145,7 @@
 
             Model = new ();
             CheckModel = new ();
+            CheckExistingModel = new();
 
             if (SuccessCallback != null)
             {
@@ -148,7 +154,7 @@
 
             IsVisible = false;
         }
-        else
+        else if (Type == SubmitType.CheckNew)
         {
             CheckModel = await Http.PostResultAsJsonAsync<TemplateCheckViewModel, TemplateEditViewModel>(
                 "Templates/Check", Model)
@@ -157,6 +163,16 @@
             await ShowCheckDialog(CheckModel);
 
             CheckModel = new ();
+        }
+        else
+        {
+            CheckExistingModel = await Http.GetFromJsonAsync<TemplateCheckViewModel>(
+                $"Templates/CheckExisting/{Model.Id}")
+                ?? new();
+
+            await ShowCheckDialog(CheckExistingModel);
+
+            CheckExistingModel = new ();
         }
     }
 
@@ -167,8 +183,16 @@
             "Количество карточек", new DialogOptions
             {
                 ChildContent = @<text>
-                    Найдено поиском шаблона по базе карточек: <strong>@model.CountAffected</strong>.<br/>Будет применено алгоритмом при сохранении шаблона: <strong>@model.CountResulted</strong>.
+                    Найдено поиском шаблона по базе карточек: <strong>@model.CountAffected</strong>.<br/>
+                    Будет применено алгоритмом при сохранении шаблона: <strong>@model.CountResulted</strong>.
                 </text>
-            });
+    });
+    }
+
+    private enum SubmitType
+    {
+        Save,
+        CheckExisting,
+        CheckNew
     }
 }
