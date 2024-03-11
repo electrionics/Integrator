@@ -17,7 +17,9 @@ namespace Integrator.Web.Blazor.Server.Controllers
 
         private readonly IValidator<TemplateEditViewModel> _templateEditValidator;
 
-        public TemplatesController(ILogger<CardsController> logger, IntegratorDataContext dataContext, IValidator<TemplateEditViewModel> templateEditValidator)
+        public TemplatesController(ILogger<CardsController> logger, 
+            IntegratorDataContext dataContext, 
+            IValidator<TemplateEditViewModel> templateEditValidator)
         {
             _logger = logger;
             this.dataContext = dataContext;
@@ -214,23 +216,6 @@ namespace Integrator.Web.Blazor.Server.Controllers
             }
 
             return true;
-        }
-
-        [HttpPost]
-        public async Task Recalculate()
-        {
-            await RecalculateSearch();
-            await RecalculateApply();
-        }
-
-        private async Task RecalculateSearch()
-        {
-
-        }
-
-        private async Task RecalculateApply()
-        {
-
         }
     }
 }

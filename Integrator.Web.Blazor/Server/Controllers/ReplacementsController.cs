@@ -15,22 +15,5 @@ namespace Integrator.Web.Blazor.Server.Controllers
             this.logger = logger;
             this.dataContext = dataContext;
         }
-
-        [HttpPost]
-        public async Task Recalculate()
-        {
-            await RecalculateSearch();
-            await RecalculateApply();
-        }
-
-        private async Task RecalculateSearch()
-        {
-
-        }
-
-        private async Task RecalculateApply()
-        {
-
-        }
     }
 }

@@ -18,7 +18,7 @@ namespace Integrator.Logic
             this.logger = logger;
         }
 
-        public async Task ProcessDatabaseWithTemplates()
+        public async Task ProcessCardsWithTemplates()
         {
             var templates = await dataContext.Set<Template>()
                 .OrderBy(x => x.Order)

@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Integrator.Data\Integrator.Data.csproj" />
+    <ProjectReference Include="..\..\Integrator.Logic\Integrator.Logic.csproj" />
     <ProjectReference Include="..\Client\Integrator.Web.Blazor.Client.csproj" />
     <ProjectReference Include="..\Shared\Integrator.Web.Blazor.Shared.csproj" />
   </ItemGroup>

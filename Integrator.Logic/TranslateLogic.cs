@@ -25,24 +25,26 @@ namespace Integrator.Logic
             this.dataContext = dataContext;
         }
 
-        public async Task TranslateDatabase()
+        public async Task AddAllCardsNewTranslations()
         {
             var shops = await dataContext.Set<Shop>().ToListAsync();
 
             foreach (var shop in shops)
             {
-                await TranslateShop(shop.Name);
+                await AddShopCardNewTranslations(shop.Name);
             }
         }
+
+        #region Structural Methods
 
         // Переводит все тексты карточек товаров и относительные пути к папке карточки для выбранного магазина.
         // Карточки, которые ранее были переведены, не переводятся повторно.
         // Карточки с одинаковым текстом переводятся один раз.
-        public async Task TranslateShop(string shopName)
+        private async Task AddShopCardNewTranslations(string shopName)
         {
             logger.WriteLine($"Translate shop: {shopName}");
 
-            #region Prepare to translate
+            #region Prepare data and environment for translation
 
             var shop = await dataContext.Set<Shop>().FirstAsync(x => x.Name == shopName);
             var cards = await dataContext.Set<Card>().Where(x => x.ShopId == shop.Id && x.CardTranslation == null).ToListAsync();
@@ -53,8 +55,13 @@ namespace Integrator.Logic
             }.Build();
             //TranslationServiceClient client = TranslationServiceClient.Create();
 
-            var translations = new Dictionary<int, CardTranslation>();
+            // переменная texts - хранилище неповторяющихся текстов карточек,
+            // переменная translations - хранилище сущностей, содержащих уже переведенные тексты с привязкой к идентификатору карточки
+            // переменная translationsBatch - текущая партия переведенных сущностей, подлежащая по достижении определенного размера сохранению
+            var allTranslations = new Dictionary<int, CardTranslation>();
             var texts = new Dictionary<string, int>();
+            var translationsBatch = new List<CardTranslation>();
+            const int translationsBatchSize = 100;
 
             foreach (var card in cards)
             {
@@ -72,8 +79,7 @@ namespace Integrator.Logic
                     CardId = card.Id,
                 };
 
-                // same text already translated for current batch
-                if (translations.TryGetValue(texts[card.TextFileContent], out var existingTranslation))
+                if (allTranslations.TryGetValue(texts[card.TextFileContent], out var existingTranslation))
                 {
                     cardTranslation.ContentEng = existingTranslation.ContentEng ?? string.Empty;
                     cardTranslation.ContentRus = existingTranslation.ContentRus ?? string.Empty;
@@ -83,20 +89,23 @@ namespace Integrator.Logic
                         var eng = await TranslateAsync(client, "en-US", card.FolderPath);
                         var rus = await TranslateAsync(client, "ru-RU", card.FolderPath);
 
+                        // пути переводим всегда, пренебрегаем экономией на них
                         cardTranslation.TitleEng = eng.path;
                         cardTranslation.TitleRus = rus.path;
 
-                        translations.Add(card.Id, cardTranslation);
+                        allTranslations.Add(card.Id, cardTranslation);
+                        translationsBatch.Add(cardTranslation);
                     }
                     catch (RpcException ex) when (ex.StatusCode == StatusCode.ResourceExhausted)
                     {
-                        await SaveAsync(translations, sw);
+                        await ClearTranslationsBatch(translationsBatch, sw); // сохраняем то, что уже переведено, избегая потерь при превышении установленных для бесплатного перевода квот
                         return;
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        await SaveAsync(translations, sw);
-                        throw;
+                        logger.WriteLine($"Unpredictable error while translating path: {ex.GetType()} message: {ex.Message}");
+                        await ClearTranslationsBatch(translationsBatch, sw);
+                        return;
                     }
                 }
                 else
@@ -111,35 +120,63 @@ namespace Integrator.Logic
                         cardTranslation.TitleRus = rus.path;
                         cardTranslation.ContentRus = rus.text ?? string.Empty;
 
-                        translations.Add(card.Id, cardTranslation);
+                        allTranslations.Add(card.Id, cardTranslation);
+                        translationsBatch.Add(cardTranslation);
                     }
                     catch (RpcException ex) when (ex.StatusCode == StatusCode.ResourceExhausted)
                     {
-                        await SaveAsync(translations, sw);
+                        await ClearTranslationsBatch(translationsBatch, sw);
                         return;
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        await SaveAsync(translations, sw);
-                        throw;
+                        logger.WriteLine($"Unpredictable error while translating text and path: {ex.GetType()} message: {ex.Message}");
+                        await ClearTranslationsBatch(translationsBatch, sw);
+                        return;
                     }
+                }
+                
+                if (translationsBatch.Count == translationsBatchSize)
+                {
+                    await ClearTranslationsBatch(translationsBatch, sw);
                 }
             }
 
-            logger.WriteLine("No errors during translation!!!");
-            await SaveAsync(translations, sw);
+            logger.WriteLine("No errors during translation");
+            await ClearTranslationsBatch(translationsBatch, sw);
         }
+        // @exceptionshandled
+
+        private async Task<bool> ClearTranslationsBatch(List<CardTranslation> batch, Stopwatch sw)
+        {
+            sw.Stop();
+            logger.WriteLine($"Time spent: {sw.Elapsed} translations: {2 * batch.Select(x => x.ContentEng).Distinct().Count()}");
+
+            dataContext.Set<CardTranslation>().AddRange(batch);
+
+            try
+            {
+                await dataContext.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.WriteLine($"Oops, something wrong with adding translations to database. Please re-run current operation. Exception: {ex.GetType()} message: {ex.Message}");
+
+                return false;
+            }
+            finally
+            {
+                batch.Clear();
+            }
+        }
+        // @exceptionshandled
+
+        #endregion
 
 
         #region Helper Methods
-
-        private async Task SaveAsync(Dictionary<int, CardTranslation> translations, Stopwatch sw)
-        {
-            sw.Stop();
-            logger.WriteLine($"{sw.Elapsed} translations: {2 * translations.Select(x => x.Value.ContentEng).Distinct().Count()}");
-            dataContext.Set<CardTranslation>().AddRange(translations.Select(x => x.Value));
-            await dataContext.SaveChangesAsync();
-        }
 
         private static async Task<(string path, string text)> TranslateAsync(TranslationServiceClient client, string languageCode, string path, string? sourceText = null)
         {

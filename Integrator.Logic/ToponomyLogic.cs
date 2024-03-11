@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Integrator.Logic
 {
+    [Obsolete("Использовался для изначальной разметки товаров. Сейчас неактуален ввиду механизма шаблонов и отдельного класса для поиска одинаковых товаров.")]
     public class ToponomyLogic
     {
         private readonly IntegratorDataContext dataContext;

@@ -33,28 +33,28 @@
 <br />
 
 @code {
-    private async Task RunRecalculation()
+    private async Task RunSyncShopDirectories()
     {
-        await Http.PostAsync("Templates/Recalculate", null);
-    }
-
-    private async Task RunReplacements()
-    {
-        await Http.PostAsync("Replacements/Recalculate", null);
-    }
-
-    private async Task RunShopDirectoriesSync()
-    {
-        await Task.CompletedTask;
+        await Http.PostAsync("Commands/SyncShopDirectories", null);
     }
 
     private async Task RunTranslations()
     {
-        await Task.CompletedTask;
+        await Http.PostAsync("Commands/TranslateTexts", null);
+    }
+
+    private async Task RunRecalculation()
+    {
+        await Http.PostAsync("Commands/RecalculateCards", null);
     }
 
     private async Task RunSameCards()
     {
-        await Task.CompletedTask;
+        await Http.PostAsync("Commands/MarkSameCards", null);
+    }
+
+    private async Task RunReplacements()
+    {
+        await Http.PostAsync("Commands/RecalculateTexts", null);
     }
 }

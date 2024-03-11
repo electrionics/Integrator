@@ -113,7 +113,7 @@ static async Task CallLoadShop(string shopName)
 {
     var logic = new ShopDirectoryLogic(GetDataContext(), GetLoggerDecorator());
 
-    await logic.LoadShop(shopName);
+    await logic.SyncShopDirectory(shopName);
 
     Console.WriteLine("Press any key");
     Console.ReadLine();
@@ -123,7 +123,7 @@ static async Task CallProcessDatabaseWithTemplates()
 {
     var logic = new TemplateLogic(GetDataContext(), GetLoggerDecorator());
 
-    await logic.ProcessDatabaseWithTemplates();
+    await logic.ProcessCardsWithTemplates();
 
     Console.WriteLine("Press any key");
     Console.ReadLine();
@@ -133,7 +133,7 @@ static async Task CallTranslateDatabase()
 {
     var logic = new TranslateLogic(GetDataContext(), GetLoggerDecorator());
 
-    await logic.TranslateDatabase();
+    await logic.AddAllCardsNewTranslations();
 
     Console.WriteLine("Press any key");
     Console.ReadLine();
