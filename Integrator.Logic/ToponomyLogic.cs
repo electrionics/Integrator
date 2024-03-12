@@ -2,6 +2,7 @@
 using Integrator.Data.Entities;
 using Integrator.Data.Helpers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Integrator.Logic
 {
@@ -9,9 +10,9 @@ namespace Integrator.Logic
     public class ToponomyLogic
     {
         private readonly IntegratorDataContext dataContext;
-        private readonly Shared.ILogger logger;
+        private readonly ILogger<ToponomyLogic> logger;
 
-        public ToponomyLogic(IntegratorDataContext dataContext, Shared.ILogger logger)
+        public ToponomyLogic(IntegratorDataContext dataContext, ILogger<ToponomyLogic> logger)
         {
             this.logger = logger;
             this.dataContext = dataContext;
@@ -20,7 +21,7 @@ namespace Integrator.Logic
         // Создание новых черновиков для категорий и брендов. В будущем нужно отказаться от этой сущности в пользу готового бренда со статусом IsAccepted или IsDraft
         public async Task CreateToponomyDrafts()
         {
-            logger.WriteLine($"Process Cards: category drafts and brand drafts");
+            logger.LogInformation($"Process Cards: category drafts and brand drafts");
 
             var categoryCandidates = (await dataContext.Set<Card>()
                 .AsNoTracking()
@@ -143,7 +144,7 @@ namespace Integrator.Logic
 
             #endregion
 
-            logger.WriteLine($"categories {counterCategories}, brands {counterBrands}");
+            logger.LogInformation($"categories {counterCategories}, brands {counterBrands}");
 
             await dataContext.SaveChangesAsync();
         }

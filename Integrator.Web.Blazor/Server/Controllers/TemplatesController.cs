@@ -164,6 +164,8 @@ namespace Integrator.Web.Blazor.Server.Controllers
                 new((int)TemplateApplyField.Size, "Размер"),
                 new((int)TemplateApplyField.Color, "Цвет"),
                 new((int)TemplateApplyField.Price, "Цена"),
+                new((int)TemplateApplyField.Model, "Модель"),
+                new((int)TemplateApplyField.Material, "Материал"),
             };
         }
 

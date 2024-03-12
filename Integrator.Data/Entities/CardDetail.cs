@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Integrator.Data.Entities
+﻿namespace Integrator.Data.Entities
 {
     public class CardDetail
     {
@@ -17,6 +11,12 @@ namespace Integrator.Data.Entities
         public decimal? Price { get; set; }
 
         public string? Color { get; set; }
+
+        public string? Model { get; set; }
+
+        public string? Material { get; set; }
+
+        public string ContentRus { get; set; }
 
         public List<CardDetailSize> CardDetailSizes { get; set; }
 

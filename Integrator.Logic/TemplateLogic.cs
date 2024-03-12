@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Integrator.Data;
 using Integrator.Data.Entities;
+using Microsoft.Extensions.Logging;
 using Integrator.Shared;
 
 namespace Integrator.Logic
@@ -10,9 +11,9 @@ namespace Integrator.Logic
     public class TemplateLogic
     {
         private readonly IntegratorDataContext dataContext;
-        private readonly ILogger logger;
+        private readonly ILogger<TemplateLogic> logger;
 
-        public TemplateLogic(IntegratorDataContext dataContext, ILogger logger)
+        public TemplateLogic(IntegratorDataContext dataContext, ILogger<TemplateLogic> logger)
         {
             this.dataContext = dataContext;
             this.logger = logger;
@@ -63,14 +64,14 @@ namespace Integrator.Logic
                         }
                         else
                         {
-                            logger.WriteLine("Matching already processed.");
+                            logger.LogInformation("Matching already processed.");
                         }
                     }
                     if (counter > 0 && counter % 100 == 0)
                     {
                         counter++;
                         await dataContext.SaveChangesAsync();
-                        logger.WriteLine($"Already matched: {counter}");
+                        logger.LogInformation($"Already matched: {counter}");
                     }
                 }
             }
@@ -95,13 +96,13 @@ namespace Integrator.Logic
 
                 if (template.ApplyValue == null)
                 {
-                    if (match?.Groups.Count >= 2)
+                    if (match.Groups.Count >= 2)
                     {
-                        applyValue = match?.Groups[1].Value;
+                        applyValue = match.Groups[1].Value;
                     }
                     else
                     {
-                        logger.WriteLine(
+                        logger.LogWarning(
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
                                 $"Регулярное '{template.SearchValue}' выражение не содержит групп.");
@@ -135,7 +136,7 @@ namespace Integrator.Logic
                         }
                         else
                         {
-                            logger.WriteLine(
+                            logger.LogWarning(
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
                                 $"Значение '{applyValue}' не подходит для цены.");
@@ -147,7 +148,7 @@ namespace Integrator.Logic
 
                         if (newBrand == null)
                         {
-                            logger.WriteLine(
+                            logger.LogWarning(
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
                                 $"Бренд с именем '{applyValue}' не найден в базе");
@@ -155,8 +156,6 @@ namespace Integrator.Logic
                         }
 
                         return (true, newBrand.Id.ToString());
-                    case TemplateApplyField.Color:
-                        return (true, applyValue);
                     case TemplateApplyField.Size:
                         List<decimal> templateSetSizeValues;
                         try
@@ -168,7 +167,7 @@ namespace Integrator.Logic
                         }
                         catch (FormatException)
                         {
-                            logger.WriteLine(
+                            logger.LogWarning(
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
                                 $"Размеры шаблона не могут быть распознаны: '{applyValue}'");
@@ -190,6 +189,10 @@ namespace Integrator.Logic
                         }
 
                         return (true, string.Join(',', newSizes.Select(x => x.SizeId)));
+                    case TemplateApplyField.Color:
+                    case TemplateApplyField.Material:
+                    case TemplateApplyField.Model:
+                        return (true, applyValue);
                     default:
                         return (false, null);
                 }
@@ -207,7 +210,7 @@ namespace Integrator.Logic
                     case TemplateApplyField.Price:
 
                         var price = decimal.Parse(matchingValue);
-                        logger.WriteLineIf(card.CardDetail.Price != null && card.CardDetail.Price != price,
+                        logger.LogWarningIf(card.CardDetail.Price != null && card.CardDetail.Price != price,
                             $"Карточка {card.Id}. " +
                             $"Шаблон {template.Id}. " +
                             $"Значение цены {card.CardDetail.Price} перезаписано новым значением {price}.");
@@ -216,7 +219,7 @@ namespace Integrator.Logic
                         break;
                     case TemplateApplyField.Brand:
                         var newBrandId = int.Parse(matchingValue);
-                        logger.WriteLineIf(card.CardDetail.BrandId != null
+                        logger.LogWarningIf(card.CardDetail.BrandId != null
                             && newBrandId != card.CardDetail.BrandId,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
@@ -225,12 +228,28 @@ namespace Integrator.Logic
                         card.CardDetail.BrandId = newBrandId;
                         break;
                     case TemplateApplyField.Color:
-                        logger.WriteLineIf(card.CardDetail.Color != matchingValue,
+                        logger.LogWarningIf(card.CardDetail.Color != matchingValue,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
                                 $"Цвет '{card.CardDetail.Color}' перезаписан новым значением '{matchingValue}'");
 
                         card.CardDetail.Color = matchingValue;
+                        break;
+                    case TemplateApplyField.Model:
+                        logger.LogWarningIf(card.CardDetail.Model != matchingValue,
+                                $"Карточка {card.Id}. " +
+                                $"Шаблон {template.Id}. " +
+                                $"Модель '{card.CardDetail.Model}' перезаписана новым значением '{matchingValue}'");
+
+                        card.CardDetail.Model = matchingValue;
+                        break;
+                    case TemplateApplyField.Material:
+                        logger.LogWarningIf(card.CardDetail.Material != matchingValue,
+                                $"Карточка {card.Id}. " +
+                                $"Шаблон {template.Id}. " +
+                                $"Материал '{card.CardDetail.Material}' перезаписан новым значением '{matchingValue}'");
+
+                        card.CardDetail.Material = matchingValue;
                         break;
                     case TemplateApplyField.Size:
                         var newSizeIds = matchingValue
@@ -252,7 +271,7 @@ namespace Integrator.Logic
 
                         var afterCount = card.CardDetail.CardDetailSizes.Count;
 
-                        logger.WriteLineIf(beforeCount + newCount != afterCount,
+                        logger.LogWarningIf(beforeCount + newCount != afterCount,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
                                 $"Размеры пересекаются! Количество размеров до изменения: {beforeCount}, новых: {newCount}, после изменения: {afterCount}");

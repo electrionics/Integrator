@@ -54,7 +54,9 @@
         Brand = 1,
         Price = 2,
         Color = 3,
-        Size = 4
+        Size = 4,
+        Model = 5,
+        Material = 6,
     }
 
     public enum TemplateSearchField

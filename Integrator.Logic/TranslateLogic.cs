@@ -10,16 +10,16 @@ using Grpc.Core;
 
 using Integrator.Data;
 using Integrator.Data.Entities;
-using Integrator.Shared;
+using Microsoft.Extensions.Logging;
 
 namespace Integrator.Logic
 {
     public class TranslateLogic
     {
         private readonly IntegratorDataContext dataContext;
-        private readonly ILogger logger;
+        private readonly ILogger<TranslateLogic> logger;
 
-        public TranslateLogic(IntegratorDataContext dataContext, ILogger logger)
+        public TranslateLogic(IntegratorDataContext dataContext, ILogger<TranslateLogic> logger)
         {
             this.logger = logger;
             this.dataContext = dataContext;
@@ -42,7 +42,7 @@ namespace Integrator.Logic
         // Карточки с одинаковым текстом переводятся один раз.
         private async Task AddShopCardNewTranslations(string shopName)
         {
-            logger.WriteLine($"Translate shop: {shopName}");
+            logger.LogInformation($"Translate shop: {shopName}");
 
             #region Prepare data and environment for translation
 
@@ -103,7 +103,7 @@ namespace Integrator.Logic
                     }
                     catch (Exception ex)
                     {
-                        logger.WriteLine($"Unpredictable error while translating path: {ex.GetType()} message: {ex.Message}");
+                        logger.LogError($"Unpredictable error while translating path: {ex.GetType()} message: {ex.Message}");
                         await ClearTranslationsBatch(translationsBatch, sw);
                         return;
                     }
@@ -130,7 +130,7 @@ namespace Integrator.Logic
                     }
                     catch (Exception ex)
                     {
-                        logger.WriteLine($"Unpredictable error while translating text and path: {ex.GetType()} message: {ex.Message}");
+                        logger.LogError($"Unpredictable error while translating text and path: {ex.GetType()} message: {ex.Message}");
                         await ClearTranslationsBatch(translationsBatch, sw);
                         return;
                     }
@@ -142,7 +142,7 @@ namespace Integrator.Logic
                 }
             }
 
-            logger.WriteLine("No errors during translation");
+            logger.LogInformation("No errors during translation");
             await ClearTranslationsBatch(translationsBatch, sw);
         }
         // @exceptionshandled
@@ -150,7 +150,7 @@ namespace Integrator.Logic
         private async Task<bool> ClearTranslationsBatch(List<CardTranslation> batch, Stopwatch sw)
         {
             sw.Stop();
-            logger.WriteLine($"Time spent: {sw.Elapsed} translations: {2 * batch.Select(x => x.ContentEng).Distinct().Count()}");
+            logger.LogInformation($"Time spent: {sw.Elapsed} translations: {2 * batch.Select(x => x.ContentEng).Distinct().Count()}");
 
             dataContext.Set<CardTranslation>().AddRange(batch);
 
@@ -162,7 +162,7 @@ namespace Integrator.Logic
             }
             catch (Exception ex)
             {
-                logger.WriteLine($"Oops, something wrong with adding translations to database. Please re-run current operation. Exception: {ex.GetType()} message: {ex.Message}");
+                logger.LogError($"Oops, something wrong with adding translations to database. Please re-run current operation. Exception: {ex.GetType()} message: {ex.Message}");
 
                 return false;
             }

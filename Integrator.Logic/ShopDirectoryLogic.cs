@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Integrator.Data.Entities;
 using Integrator.Data.Helpers;
 using Integrator.Data;
+using Microsoft.Extensions.Logging;
 using Integrator.Shared;
 
 namespace Integrator.Logic
@@ -11,9 +12,9 @@ namespace Integrator.Logic
     public class ShopDirectoryLogic
     {
         private readonly IntegratorDataContext dataContext;
-        private readonly ILogger logger;
+        private readonly ILogger<ShopDirectoryLogic> logger;
 
-        public ShopDirectoryLogic(IntegratorDataContext dataContext, ILogger logger)
+        public ShopDirectoryLogic(IntegratorDataContext dataContext, ILogger<ShopDirectoryLogic> logger)
         {
             this.dataContext = dataContext;
             this.logger = logger;
@@ -57,7 +58,7 @@ namespace Integrator.Logic
         /// <returns>Успешно (частично или полностью) синхронизированный магазин</returns>
         public async Task<bool> SyncShopDirectory(string shopFolderName)
         {
-            logger.WriteLine($"Sync shop: {shopFolderName}");
+            logger.LogInformation($"Sync shop: {shopFolderName}");
 
             var shop = await ReadOrCreateShop(shopFolderName);
 
@@ -65,7 +66,7 @@ namespace Integrator.Logic
             {
                 var shopFolderChildrenDirs = Directory.GetDirectories($"shops\\{shopFolderName}"); // TODO: path combine?
 
-                logger.WriteLineIf(shopFolderChildrenDirs.Length != 2, $"Shop: {shop.Name}. WARNING!!! Count of subdirectories is {shopFolderChildrenDirs.Length}, but expected 2.");
+                logger.LogWarningIf(shopFolderChildrenDirs.Length != 2, $"Shop: {shop.Name}. WARNING!!! Count of subdirectories is {shopFolderChildrenDirs.Length}, but expected 2.");
 
                 return await ProcessToponomies(shopFolderChildrenDirs, shop);
             }
@@ -93,7 +94,7 @@ namespace Integrator.Logic
                 }
                 catch (Exception ex)
                 {
-                    logger.WriteLine($"Error saving new shop, processing stopped: {ex.Message}");
+                    logger.LogError($"Error saving new shop, processing stopped: {ex.Message}");
                 }
             }
 
@@ -111,7 +112,7 @@ namespace Integrator.Logic
             }
             catch (InvalidOperationException)
             {
-                logger.WriteLine("Messy structure of toponomy directories: more than one brands and/or categories direcotry found. Processing stopped.");
+                logger.LogError("Messy structure of toponomy directories: more than one brands and/or categories direcotry found. Processing stopped.");
                 return false;
             }
 
@@ -124,10 +125,10 @@ namespace Integrator.Logic
                 await ProcessToponomyRootPath(categoryPath, dataContext, shop);
             }
 
-            logger.WriteLineIf(brandPath != null && categoryPath != null, $"Shop: {shop.Name}. Normal processing.");
-            logger.WriteLineIf(brandPath == null && categoryPath != null, $"Shop: {shop.Name}. Subdirectory with brands wasn't found, only partial processing would be performed.");
-            logger.WriteLineIf(categoryPath == null && brandPath != null, $"Shop: {shop.Name}. Subdirectory with categories wasn't found, only partial processing would be performed.");
-            logger.WriteLineIf(brandPath == null && categoryPath == null, $"Shop: {shop.Name}. WARNING: no subdirectory with brands and categories found. Processing skipped.");
+            logger.LogInformationIf(brandPath != null && categoryPath != null, $"Shop: {shop.Name}. Normal processing.");
+            logger.LogWarningIf(brandPath == null && categoryPath != null, $"Shop: {shop.Name}. Subdirectory with brands wasn't found, only partial processing would be performed.");
+            logger.LogWarningIf(categoryPath == null && brandPath != null, $"Shop: {shop.Name}. Subdirectory with categories wasn't found, only partial processing would be performed.");
+            logger.LogWarningIf(brandPath == null && categoryPath == null, $"Shop: {shop.Name}. WARNING: no subdirectory with brands and categories found. Processing skipped.");
 
             return true;
         }
@@ -160,7 +161,7 @@ namespace Integrator.Logic
                 }
                 catch (InvalidOperationException)
                 {
-                    logger.WriteLine($"More than one text file in folder {cardDirectory.FullName}");
+                    logger.LogWarning($"More than one text file in folder {cardDirectory.FullName}");
                     textFile = cardDirectory.GetFiles("*.txt", SearchOption.TopDirectoryOnly).First();
                 }
 
@@ -181,8 +182,8 @@ namespace Integrator.Logic
                 }
 
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-                logger.WriteLineIf(cardToAdd, $"directory {cardDirectory.Name}, text file '{textFile.Name}' was successfully processed. Card placed to list for addition.");
-                logger.WriteLineIf(!cardToAdd, $"directory {cardDirectory.Name}, text file '{textFile?.Name ?? string.Empty}' wasn't found or has no content. Card skipped.");
+                logger.LogInformationIf(cardToAdd, $"directory {cardDirectory.Name}, text file '{textFile.Name}' was successfully processed. Card placed to list for addition.");
+                logger.LogWarningIf(!cardToAdd, $"directory {cardDirectory.Name}, text file '{textFile?.Name ?? string.Empty}' wasn't found or has no content. Card skipped.");
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 
                 if (cardsToAdd.Count >= cardsBatchSize)
@@ -207,7 +208,7 @@ namespace Integrator.Logic
             }
             catch (Exception ex)
             {
-                logger.WriteLine($"Oops, something wrong with adding cards to database. Please re-run current operation. Exception: {ex.GetType()} message: {ex.Message}");
+                logger.LogError($"Oops, something wrong with adding cards to database. Please re-run current operation. Exception: {ex.GetType()} message: {ex.Message}");
                 
                 return false;
             }
@@ -273,7 +274,7 @@ namespace Integrator.Logic
             }
             catch (Exception ex)
             {
-                logger.WriteLine($"Oops, something going wrong while reading text file: {textFile.FullName} exception: {ex.GetType()} message: {ex.Message}");
+                logger.LogError($"Oops, something going wrong while reading text file: {textFile.FullName} exception: {ex.GetType()} message: {ex.Message}");
                 content = null;
             }
 

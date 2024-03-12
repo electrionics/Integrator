@@ -2,8 +2,9 @@
 
 using Integrator.Data;
 using Integrator.Data.Helpers;
-using Integrator.Shared;
 using Integrator.Logic;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 // Магазины:
 //  'hanguang'
@@ -91,7 +92,7 @@ static async Task CallTest()
 
 static async Task CallCreateToponomyDrafts()
 {
-    var logic = new ToponomyLogic(GetDataContext(), GetLoggerDecorator());
+    var logic = new ToponomyLogic(GetDataContext(), GetLogger<ToponomyLogic>());
 
     await logic.CreateToponomyDrafts();
 
@@ -101,7 +102,7 @@ static async Task CallCreateToponomyDrafts()
 
 static async Task CallMarkCardsWithToponomyItems()
 {
-    var logic = new ToponomyLogic(GetDataContext(), GetLoggerDecorator());
+    var logic = new ToponomyLogic(GetDataContext(), GetLogger<ToponomyLogic>());
 
     await logic.MarkCardsWithToponomyItems();
 
@@ -111,7 +112,7 @@ static async Task CallMarkCardsWithToponomyItems()
 
 static async Task CallLoadShop(string shopName)
 {
-    var logic = new ShopDirectoryLogic(GetDataContext(), GetLoggerDecorator());
+    var logic = new ShopDirectoryLogic(GetDataContext(), GetLogger<ShopDirectoryLogic>());
 
     await logic.SyncShopDirectory(shopName);
 
@@ -121,7 +122,7 @@ static async Task CallLoadShop(string shopName)
 
 static async Task CallProcessDatabaseWithTemplates()
 {
-    var logic = new TemplateLogic(GetDataContext(), GetLoggerDecorator());
+    var logic = new TemplateLogic(GetDataContext(), GetLogger<TemplateLogic>());
 
     await logic.ProcessCardsWithTemplates();
 
@@ -131,7 +132,7 @@ static async Task CallProcessDatabaseWithTemplates()
 
 static async Task CallTranslateDatabase()
 {
-    var logic = new TranslateLogic(GetDataContext(), GetLoggerDecorator());
+    var logic = new TranslateLogic(GetDataContext(), GetLogger<TranslateLogic>());
 
     await logic.AddAllCardsNewTranslations();
 
@@ -149,9 +150,17 @@ static IntegratorDataContext GetDataContext()
     return new IntegratorDataContext("server=.;database=Integrator;User Id=qqqq;Password=qqqq;TrustServerCertificate=True;");
 }
 
-static ILogger GetLoggerDecorator()
+static ILogger<T> GetLogger<T>()
 {
-    return new LoggerDecorator(new Integrator.Console.ConsoleLogger(), new DebugLogger());
+    var config = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LogFiles", $"{DateTime.Now.Year}-{DateTime.Now.Month}-{DateTime.Now.Day}", "Log.txt"),
+                rollingInterval: RollingInterval.Infinite,
+                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] {Message}{NewLine}{Exception}");
+    var logger = config.CreateLogger();
+    var loggerFactory = new LoggerFactory().AddSerilog(logger);
+
+    return LoggerFactoryExtensions.CreateLogger<T>(loggerFactory);
 }
 
 static int GetImageStreamHash(FileInfo imageFile)

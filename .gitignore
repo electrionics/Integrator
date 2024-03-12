@@ -362,3 +362,4 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Integrator.Web.Blazor/Client/wwwroot/shops/
+/Integrator.Web.Blazor/Server/LogFiles

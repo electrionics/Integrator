@@ -3,6 +3,7 @@ using Integrator.Data;
 using Integrator.Web.Blazor.Server;
 using Integrator.Web.Blazor.Shared.Validators;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,14 @@ builder.Services.AddDbContext<IntegratorDataContext>((options) =>
 });
 
 builder.Services.AddValidatorsFromAssemblyContaining<TemplateEditViewModelValidator>();
+
+var logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .CreateLogger();
+builder.Logging.ClearProviders();
+builder.Logging.AddSerilog(logger);
+builder.Host.UseSerilog(logger);
 
 var app = builder.Build();
 
@@ -37,9 +46,8 @@ app.UseHttpsRedirection();
 
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
-
+app.UseSerilogRequestLogging();
 app.UseRouting();
-
 
 app.MapRazorPages();
 app.MapControllers();
