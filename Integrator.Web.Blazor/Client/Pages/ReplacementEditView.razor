@@ -1,0 +1,162 @@
+﻿@using Integrator.Web.Blazor.Shared;
+
+@using Integrator.Web.Blazor.Shared.Common
+@using Integrator.Web.Blazor.Shared.Validators
+
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.DropDowns
+
+@inject HttpClient Http
+@inject SfDialogService DialogSerivce
+
+<SfDialog Width="500px" IsModal="true" @bind-Visible="@IsVisible" ShowCloseIcon="true" ID="EditReplacement">
+    <DialogTemplates>
+        <Header>
+            @(IsEdit ? "Изменить" : "Добавить") заменитель текста
+        </Header>
+        <Content>
+            <EditForm id="ReplacementForm" Model="Model" OnValidSubmit="SubmitButtonClick">
+
+                <FluentValidationValidator TValidator="ReplacementEditViewModelValidator" />
+                <div class="mb-4">
+                    <ValidationSummary />
+                </div>
+                <div class="mb-4">
+                    <label for="searchText" class="form-label">Заменяемый текст</label>
+                    <InputText @bind-Value="@Model.SearchValue" class="form-control" id="searchText"/>
+                    <ValidationMessage For="@(() => Model.SearchValue)" />
+                </div>
+                <div class="mb-4">
+                    <label for="applyValue" class="form-label">Заменяющий текст</label>
+                    <InputText @bind-Value="@Model.ApplyValue" class="form-control" id="applyValue" />
+                    <ValidationMessage For="@(() => Model.ApplyValue)" />
+                </div>
+                <div class="mb-4">
+                    <label for="applyOrder" class="form-label">Порядок применения</label> <span class="oi oi-info" id="applyOrderInfo"></span>
+                    <SfNumericTextBox Min="0" Max="1000" Step="10" TValue="int?" @bind-Value="Model.ApplyOrder" ID="applyOrder" />
+                    <ValidationMessage For="@(() => Model.ApplyOrder)" />
+                    <SfTooltip Position="Position.TopCenter" Target="#applyOrderInfo" Content="Сначала применяются заменители с пустым порядком, затем с меньшим порядком, затем - с большим.">
+                    </SfTooltip>
+                </div>
+                <div class="mb-4">
+                    <label for="notwes" class="form-label">Заметки, описание</label>
+                    <InputTextArea @bind-Value="@Model.Description" class="form-control" Id="notwes" aria-describedby="notwesHelp"></InputTextArea>
+                    <ValidationMessage For="@(() => Model.Description)" />
+                    <div id="notwesHelp" class="form-text">Оставьте заметки о шаблоне.</div>
+                </div>
+                @{
+                    if (IsEdit)
+                    {
+                        <div class="mb-4">
+                            <button type="submit" class="btn btn-info" @onclick="() => Type = SubmitType.CheckExisting">Проверить количество (исходный заменитель)</button>
+                        </div>
+                    }
+                }
+                <div class="mb-4">
+                    <button type="submit" class="btn btn-info" @onclick="() => Type = SubmitType.CheckNew">Проверить количество (новый заменитель)</button>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Сохранить" form="ReplacementForm" IsPrimary="true" Type="ButtonType.Submit" OnClick="() => Type = SubmitType.Save" CssClass="btn btn-success" />
+        <DialogButton Content="Отмена" OnClick="CloseBtnClick" />
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    [Parameter]
+    public object ParamToLetPopupBindVisibleWork { get; set; }
+
+    public bool IsVisible { get; set; }
+
+    public bool IsEdit { get; set; }
+
+    private SubmitType Type { get; set; } = SubmitType.Save;
+
+    public ReplacementEditViewModel Model { get; set; }
+
+    public Action? SuccessCallback { get; set; }
+
+    public ReplacementCheckViewModel CheckModel { get; set; }
+
+    public ReplacementCheckViewModel CheckExistingModel { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        Model = new();
+        CheckModel = new();
+
+        return base.OnInitializedAsync();
+    }
+
+    private void CloseBtnClick()
+    {
+        IsVisible = false;
+    }
+
+    private async Task SubmitButtonClick()
+    {
+        if (Type == SubmitType.Save)
+        {
+            CheckModel = await Http.PostResultAsJsonAsync<ReplacementCheckViewModel, ReplacementEditViewModel>(
+                "Replacements/Save", Model)
+                ?? new();
+
+            await ShowCheckDialog(CheckModel);
+
+            Model = new();
+            CheckModel = new();
+            CheckExistingModel = new();
+
+            if (SuccessCallback != null)
+            {
+                SuccessCallback();
+            }
+
+            IsVisible = false;
+        }
+        else if (Type == SubmitType.CheckNew)
+        {
+            CheckModel = await Http.PostResultAsJsonAsync<ReplacementCheckViewModel, ReplacementEditViewModel>(
+                "Replacements/Check", Model)
+                ?? new();
+
+            await ShowCheckDialog(CheckModel);
+
+            CheckModel = new();
+        }
+        else
+        {
+            CheckExistingModel = await Http.GetFromJsonAsync<ReplacementCheckViewModel>(
+                $"Replacements/CheckExisting/{Model.Id}")
+                ?? new();
+
+            await ShowCheckDialog(CheckExistingModel);
+
+            CheckExistingModel = new();
+        }
+    }
+
+    private async Task ShowCheckDialog(ReplacementCheckViewModel model)
+    {
+        await DialogSerivce.AlertAsync(
+        null,
+        "Количество карточек", new DialogOptions
+            {
+                ChildContent = @<text>
+                    Найдено поиском заменителя по базе карточек: <strong>@model.CountAffected</strong>.<br />
+                    Будет применено алгоритмом при сохранении заменителя: <strong>@model.CountMatched</strong>.
+                </text>
+            });
+    }
+
+    private enum SubmitType
+    {
+        Save,
+        CheckExisting,
+        CheckNew
+    }
+}

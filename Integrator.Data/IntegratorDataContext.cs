@@ -159,6 +159,11 @@ namespace Integrator.Data
             });
 
 
+            modelBuilder.Entity<Replacement>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+            });
+
             //modelBuilder.Entity<ThoughtCognitiveError>(entity =>
             //{
             //    entity.HasKey(x => new { x.ThoughtId, x.CognitiveErrorId });

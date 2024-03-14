@@ -11,7 +11,7 @@
 
 <h1>Загруженные карточки товаров</h1>
 
-<p>Загруженные карчточки товаров с первично размеченными брендами и категориями.</p<br/>
+<p>Загруженные карчточки товаров с первично размеченными брендами и категориями.</p><br/>
 
 @if (cards == null)
 {
@@ -20,7 +20,8 @@
 else
 {
     <SfButton OnClick="ToggleExpanded" Content="@(ExpandedText ? "Сократить текст" : "Развернуть текст")"/>
-    <SfGrid ID="Grid"
+
+    <SfGrid ID="CardsGrid"
         AllowFiltering="true" 
         AllowSorting="true" 
         AllowPaging="true"
@@ -28,9 +29,8 @@ else
         AllowTextWrap="true"
         DataSource="@cards" 
         TValue="CardViewModel">
-
-        <GridPageSettings PageSize="50"></GridPageSettings>
-        <GridFilterSettings Type="FilterType.Excel"></GridFilterSettings>
+        <GridPageSettings PageSize="50"/>
+        <GridFilterSettings Type="FilterType.Excel"/>
         <GridColumns>
             <GridColumn Field="@nameof(CardViewModel.ShopName)"
                         HeaderText="Магазин"
@@ -52,11 +52,6 @@ else
                         Width="200"
                         AllowFiltering="true"
                         AllowGrouping="true" />
-            @*<GridColumn Field="@nameof(CardViewModel.CardPathRus)"
-                        HeaderText="Путь карточки (рус.)"
-                        Width="200"
-                        AllowFiltering="true"
-                        AllowGrouping="true" />*@
             <GridColumn Field="@nameof(CardViewModel.ImageUrls)"
                         HeaderText="Изображения"
                         Width="100"
@@ -72,7 +67,6 @@ else
                             </a>
                             break;
                             <br/>
-                            //
                         }
                     }
                 </Template>
@@ -110,7 +104,7 @@ else
                         Width="150"
                         AllowFiltering="true"
                         AllowGrouping="true">
-            </GridColumn>d
+            </GridColumn>
             <GridColumn Field="@nameof(CardViewModel.SourceContent)"
                         HeaderText="Описание (исходн.)"
                         Width="250"

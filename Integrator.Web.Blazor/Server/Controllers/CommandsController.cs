@@ -52,12 +52,14 @@ namespace Integrator.Web.Blazor.Server.Controllers
 
         private async Task RecalculatePropsSearch()
         {
-
+            logger.LogInformation("Recalculate structure: search");
+            await Task.CompletedTask;
         }
 
         private async Task RecalculatePropsApply()
         {
-
+            logger.LogInformation("Recalculate structure: apply");
+            await Task.CompletedTask;
         }
 
         #endregion
@@ -83,12 +85,14 @@ namespace Integrator.Web.Blazor.Server.Controllers
 
         private async Task RecalculateTextSearch()
         {
-
+            logger.LogInformation("Recalculate text search.");
+            await Task.CompletedTask;
         }
 
         private async Task RecalculateTextApply()
         {
-
+            logger.LogInformation("Recalculate text apply.");
+            await Task.CompletedTask;
         }
         #endregion
     }

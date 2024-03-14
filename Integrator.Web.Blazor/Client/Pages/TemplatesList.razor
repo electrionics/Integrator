@@ -7,20 +7,20 @@
 @inject HttpClient Http
 @inject SfDialogService SfDialogService;
 
-<PageTitle>Созданные шаблоны</PageTitle>
+<PageTitle>Созданные шаблоны структуры</PageTitle>
 
-<h1>Созданные шаблоны</h1>
+<h1>Созданные шаблоны структуры</h1>
 
-<p>Созданные шаблоны для обработки карточек.</p>
+<p>Созданные шаблоны структуры для обработки карточек.</p>
 
 @if (templates == null)
 {
-    <p><em>Загрузка шаблонов...</em></p>
+    <p><em>Загрузка шаблонов структур...</em></p>
 }
 else
 {
-    <button class="btn btn-primary mt-2 mb-3" @onclick="AddBtnClick">
-        <i class="oi oi-plus" /> Добавить шаблон
+    <button class="btn btn-primary mt-2 mb-3" @onclick="AddBtnClick" type="button">
+        <i class="oi oi-plus" /> Добавить шаблон структуры
     </button>
 
     <SfGrid ID="Grid"
@@ -141,8 +141,8 @@ else
     private SfGrid<TemplateItemViewModel> DataGrid;
     private TemplateEditView TemplateEditView;
 
-    IEnumerable<KeyValuePair<int, string>> searchFields;
-    IEnumerable<KeyValuePair<int, string>> applyFields;
+    IEnumerable<KeyValuePair<int, string>>? searchFields;
+    IEnumerable<KeyValuePair<int, string>>? applyFields;
     private IEnumerable<TemplateItemViewModel>? templates;
 
     protected override async Task OnInitializedAsync()
@@ -179,7 +179,7 @@ else
         }
         else
         {
-            await SfDialogService.AlertAsync("Запись не найдена.");
+            await SfDialogService.AlertAsync("Шаблон структуры не найден.");
         }
     }
 
@@ -189,11 +189,11 @@ else
 
         if (checkModel == null)
         {
-            await SfDialogService.AlertAsync("Запись не найдена.");
+            await SfDialogService.AlertAsync("Шаблон структуры не найден.");
             return;
         }
 
-        var confirmed = await SfDialogService.ConfirmAsync("Вы действительно хотите удалить шаблон?", "Подтверждение действия", new()
+        var confirmed = await SfDialogService.ConfirmAsync("Вы действительно хотите удалить шаблон структуры?", "Подтверждение действия", new()
             {
                 ShowCloseIcon = true,
                 PrimaryButtonOptions = new()
@@ -216,12 +216,12 @@ else
 
             if (bool.TryParse(await successResponse.Content.ReadAsStringAsync(), out var success) && success)
             {
-                await SfDialogService.AlertAsync("Запись успешно удалена.");
+                await SfDialogService.AlertAsync("Шаблон структуры успешно удален.");
                 await Refresh();
             }
             else
             {
-                await SfDialogService.AlertAsync("Произошла ошибка при удалении.");
+                await SfDialogService.AlertAsync("Произошла ошибка при удалении шаблона структуры.");
             }
         }
     }

@@ -1,6 +1,7 @@
 using FluentValidation;
 using Integrator.Data;
 using Integrator.Web.Blazor.Server;
+using Integrator.Web.Blazor.Shared;
 using Integrator.Web.Blazor.Shared.Validators;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -18,7 +19,8 @@ builder.Services.AddDbContext<IntegratorDataContext>((options) =>
     options.UseSqlServer(databaseConfig?.ConnectionString);
 });
 
-builder.Services.AddValidatorsFromAssemblyContaining<TemplateEditViewModelValidator>();
+builder.Services.AddScoped<IValidator<TemplateEditViewModel>, TemplateEditViewModelValidator>();
+builder.Services.AddScoped<IValidator<ReplacementEditViewModel>, ReplacementEditViewModelValidator>();
 
 var logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)

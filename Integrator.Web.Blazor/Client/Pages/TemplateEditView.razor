@@ -11,10 +11,10 @@
 @inject HttpClient Http
 @inject SfDialogService DialogSerivce
 
-<SfDialog Width="500px" IsModal="true" @bind-Visible="@IsVisible" ShowCloseIcon="true" ID="EditThought">
+<SfDialog Width="500px" IsModal="true" @bind-Visible="@IsVisible" ShowCloseIcon="true" ID="EditTemplate">
     <DialogTemplates>
         <Header>
-            @(IsEdit ? "Изменить" : "Добавить") запись
+            @(IsEdit ? "Изменить" : "Добавить") шаблон структуры
         </Header>
         <Content>
             <EditForm id="TemplateForm" Model="Model" OnValidSubmit="SubmitButtonClick">
@@ -83,12 +83,12 @@
                     if (IsEdit)
                     {
                         <div class="mb-4">
-                            <button type="submit" class="btn btn-info" @onclick="() => Type = SubmitType.CheckExisting">Проверить количество (старая версия)</button>
+                            <button type="submit" class="btn btn-info" @onclick="() => Type = SubmitType.CheckExisting">Проверить количество (исходный шаблон)</button>
                         </div>
                     }
                 }
                 <div class="mb-4">
-                    <button type="submit" class="btn btn-info" @onclick="() => Type = SubmitType.CheckNew">Проверить количество (новая версия)</button>
+                    <button type="submit" class="btn btn-info" @onclick="() => Type = SubmitType.CheckNew">Проверить количество (новый шаблон)</button>
                 </div>
             </EditForm>
         </Content>

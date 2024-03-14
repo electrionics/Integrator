@@ -1,0 +1,196 @@
+﻿@page "/replacements"
+
+@using Integrator.Web.Blazor.Shared
+@using Syncfusion.Blazor.Grids;
+@using Syncfusion.Blazor.Popups;
+
+@inject HttpClient Http
+@inject SfDialogService SfDialogService;
+
+<PageTitle>Созданные заменитель текста</PageTitle>
+
+<h1>Созданные заменители в текстах</h1>
+
+<p>Созданные заменители в текстах для обработки карточек.</p>
+
+@if (replacements == null)
+{
+    <p><em>Загрузка заменителей в текстах...</em></p>
+}
+else
+{
+    <button class="btn btn-primary mt-2 mb-3" @onclick="AddBtnClick" type="button">
+        <i class="oi oi-plus" /> Добавить заменитель в текстах
+    </button>
+
+    <SfGrid ID="Grid"
+            @ref="DataGrid"
+            AllowFiltering="true"
+            AllowSorting="true"
+            AllowPaging="true"
+            AllowGrouping="true"
+            AllowTextWrap="true"
+            DataSource="@replacements"
+            TValue="ReplacementItemViewModel">
+
+        <GridPageSettings PageSize="50"></GridPageSettings>
+        <GridFilterSettings Type="FilterType.Excel"></GridFilterSettings>
+        <GridColumns>
+            <GridColumn Field="@nameof(ReplacementItemViewModel.Id)"
+                        HeaderText="Номер"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="false" />
+            <GridColumn Field="@nameof(ReplacementItemViewModel.SearchValue)"
+                        HeaderText="Значение поиска"
+                        Width="150"
+                        AllowFiltering="true"
+                        AllowGrouping="true">
+            </GridColumn>
+            <GridColumn Field="@nameof(ReplacementItemViewModel.ApplyValue)"
+                        HeaderText="Применяемое значение"
+                        Width="150"
+                        AllowFiltering="true"
+                        AllowGrouping="true">
+                <Template>
+                    @{
+                        var model = (ReplacementItemViewModel)context;
+                        <text>@(string.IsNullOrEmpty(model.ApplyValue) ? "<<пустая строка>>" : model.ApplyValue)</text>
+                    }
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(ReplacementItemViewModel.ApplyOrder)"
+                        HeaderText="Порядок применения"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="true" />
+            <GridColumn Field="@nameof(ReplacementItemViewModel.Description)"
+                        HeaderText="Описание"
+                        Width="200"
+                        AllowFiltering="true"
+                        AllowGrouping="true">
+            </GridColumn>
+            <GridColumn Field="@nameof(ReplacementItemViewModel.CheckViewModel.CountAffected)"
+                        HeaderText="Кол-во совпадений"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="true" />
+            <GridColumn Field="@nameof(ReplacementItemViewModel.CheckViewModel.CountMatched)"
+                        HeaderText="Кол-во применений"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="true">
+            </GridColumn>
+            <GridColumn HeaderText="Действия"
+                        Width="100">
+                <Template>
+                    @{
+                        var model = (ReplacementItemViewModel)context;
+                    }
+                    <button class="btn btn-success" @onclick="@(async () => await EditBtnClick(model.Id))">
+                        <i class="oi oi-pencil" /> Изменить
+                    </button>
+                    <button class="btn btn-danger" @onclick="@(async () => await DeleteBtnClick(model.Id))">
+                        <i class="oi oi-trash" /> Удалить
+                    </button>
+                </Template>
+            </GridColumn>
+        </GridColumns>
+    </SfGrid>
+
+    <ReplacementEditView @ref="ReplacementEditView" ParamToLetPopupBindVisibleWork="paramToPopup" />
+}
+
+@code {
+    private SfGrid<ReplacementItemViewModel> DataGrid;
+    private ReplacementEditView ReplacementEditView;
+
+    private IEnumerable<ReplacementItemViewModel>? replacements;
+
+    private object paramToPopup = new object();
+
+    protected override async Task OnInitializedAsync()
+    {
+        replacements = await Http.GetFromJsonAsync<IEnumerable<ReplacementItemViewModel>>("Replacements/GetList");
+    }
+
+    private void AddBtnClick()
+    {
+        if (ReplacementEditView.IsEdit == true)
+        {
+            ReplacementEditView.Model = new ReplacementEditViewModel();
+            ReplacementEditView.CheckModel = new ReplacementCheckViewModel();
+            ReplacementEditView.CheckExistingModel = new ReplacementCheckViewModel();
+        }
+
+        ReplacementEditView.IsEdit = false;
+        ReplacementEditView.IsVisible = true;
+        ReplacementEditView.SuccessCallback = async () => await Refresh();
+    }
+
+    private async Task EditBtnClick(int id)
+    {
+        var model = await Http.GetFromJsonAsync<ReplacementEditViewModel>($"Replacements/Get/{id}");
+        if (model != null)
+        {
+            ReplacementEditView.Model = model;
+            ReplacementEditView.IsEdit = true;
+            ReplacementEditView.IsVisible = true;
+            ReplacementEditView.SuccessCallback = async () => await Refresh();
+        }
+        else
+        {
+            await SfDialogService.AlertAsync("Заменитель текста не найден.");
+        }
+    }
+
+    private async Task DeleteBtnClick(int id)
+    {
+        var checkModel = await Http.GetFromJsonAsync<ReplacementCheckViewModel>($"Replacements/CheckExisting/{id}");
+
+        if (checkModel == null)
+        {
+            await SfDialogService.AlertAsync("Заменитель текста не найден.");
+            return;
+        }
+
+        var confirmed = await SfDialogService.ConfirmAsync("Вы действительно хотите удалить заменитель текста?", "Подтверждение действия", new()
+                {
+                    ShowCloseIcon = true,
+                    PrimaryButtonOptions = new()
+                    {
+                        IconCss = "oi oi-trash"
+                    },
+                    CancelButtonOptions = new()
+                    {
+                        Content = "Отмена",
+                    },
+                    ChildContent = @<text>
+        Найдено поиском заменителя по базе карточек: <strong>@checkModel.CountAffected</strong>.<br />
+        Будет применено алгоритмом при сохранении заменителя: <strong>@checkModel.CountMatched</strong>.
+    </text>
+        });
+
+        if (confirmed)
+        {
+            var successResponse = await Http.PostAsync($"Replacements/Delete/{id}", null);
+
+            if (bool.TryParse(await successResponse.Content.ReadAsStringAsync(), out var success) && success)
+            {
+                await SfDialogService.AlertAsync("Заменитель текста успешно удален.");
+                await Refresh();
+            }
+            else
+            {
+                await SfDialogService.AlertAsync("Произошла ошибка при удалении заменителя текста.");
+            }
+        }
+    }
+
+    private async Task Refresh()
+    {
+        replacements = await Http.GetFromJsonAsync<IEnumerable<ReplacementItemViewModel>>("Replacements/GetList");
+        await InvokeAsync(StateHasChanged);
+        await DataGrid.Refresh();
+    }
+}
