@@ -31,7 +31,7 @@
 
         public string? BrandName { get; set; }
 
-        public List<decimal> SizeValues { get; set; }
+        public List<string> SizeValues { get; set; }
 
         public string? SizeStr { get; set; }
 

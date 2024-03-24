@@ -67,6 +67,19 @@ namespace Integrator.Data
                     .HasForeignKey(x => x.CardId);
             });
 
+            modelBuilder.Entity<CardSimilar>(entity =>
+            {
+                entity.HasKey(x => new { x.BaseCardImageId, x.SimilarCardImageId });
+
+                entity.HasOne(x => x.BaseImage)
+                    .WithMany(x => x.SimilarImages)
+                    .HasForeignKey(x => x.BaseCardImageId);
+
+                entity.HasOne(x => x.SimilarImage)
+                    .WithMany(x => x.BaseImages)
+                    .HasForeignKey(x => x.SimilarCardImageId);
+            });
+
             modelBuilder.Entity<CardTranslation>(entity =>
             {
                 entity.HasKey(x => x.CardId);

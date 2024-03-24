@@ -170,7 +170,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<IEnumerable<TemplateItemViewModel>> GetList()
+        public async Task<TemplateItemViewModel[]> GetList()
         {
             var result = await dataContext.Set<Template>().AsNoTracking()
                 .Include(x => x.CardDetailMatches)
@@ -190,7 +190,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
                         CountResulted = x.CardDetailMatches.Select(x => x.CardDetailId).Distinct().Count()
                     }
                 })
-                .ToListAsync();
+                .ToArrayAsync();
 
             return result;
         }

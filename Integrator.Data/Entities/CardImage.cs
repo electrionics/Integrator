@@ -12,9 +12,16 @@
 
         public string ImageFileName { get; set; }
 
-        public int? ImageFileHash { get; set; }
+        public string? ImageFileHash { get; set; }
+
+        public long? FileSizeBytes { get; set; }
 
 
         public Card Card { get; set; }
+
+
+        public List<CardSimilar> SimilarImages { get; set; }
+
+        public List<CardSimilar> BaseImages { get; set; }
     }
 }

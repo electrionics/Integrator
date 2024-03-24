@@ -124,7 +124,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<IEnumerable<ReplacementItemViewModel>> GetList()
+        public async Task<ReplacementItemViewModel[]> GetList()
         {
             var result = await dataContext.Set<Replacement>().AsNoTracking()
                 .Select(x => new ReplacementItemViewModel
@@ -139,7 +139,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
                         CountAffected = 999
                     }
                 })
-                .ToListAsync();
+                .ToArrayAsync();
 
             return result;
         }

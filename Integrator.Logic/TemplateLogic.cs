@@ -1,9 +1,10 @@
 ﻿using System.Text.RegularExpressions;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 using Integrator.Data;
 using Integrator.Data.Entities;
-using Microsoft.Extensions.Logging;
 using Integrator.Shared;
 
 namespace Integrator.Logic
@@ -24,7 +25,6 @@ namespace Integrator.Logic
             var templates = await dataContext.Set<Template>()
                 .OrderBy(x => x.Order)
                 .ToListAsync();
-
             var cards = await dataContext.Set<Card>()
                 .Include(x => x.CardTranslation)
                 .Include(x => x.CardDetail).ThenInclude(x => x.CardDetailSizes)
@@ -34,39 +34,38 @@ namespace Integrator.Logic
 
             var sizes = await dataContext.Set<Size>()
                 .ToListAsync();
-
             var brands = await dataContext.Set<Brand>()
                 .ToListAsync();
+            var categories = await dataContext.Set<Category>()
+                .ToListAsync();
 
+            var referencesCreationContext = new Dictionary<(TemplateApplyField applyField, string newValue), object> ();
+            var executablesAfterCreation = new List<(Card card, Template template, Func<string> getValueFunc)>();
+
+            // обработка шаблонами карточек существующими значениями категорий, брендов, размеров
             var counter = 0;
             foreach (var template in templates)
             {
                 foreach (var card in cards)
                 {
-                    var processingResult = ProcessCardWithTemplate(card, template, sizes, brands);
+                    var processingResult = ProcessCardWithTemplate(card, template, sizes, brands, categories);
                     if (processingResult.matched)
                     {
                         counter++;
-                        var matching = new CardDetailTemplateMatch()
-                        {
-                            CardDetailId = card.Id,
-                            TemplateId = template.Id,
+#pragma warning disable CS8604 // Possible null reference argument.
+                        AddMatchingToContext(card, template, processingResult.value);
+#pragma warning restore CS8604 // Possible null reference argument.
+                    }
 
-                            Value = processingResult.value
-                        };
-
-                        // TODO: пересмотреть условие
-                        if (!card.CardDetail.TemplateMatches.Any(x =>
-                            x.TemplateId == matching.TemplateId))
+                    if (processingResult.newValue != null)
+                    {
+                        var getValueFunc = ProcessNotMatchedValue(card, template, processingResult.newValue, referencesCreationContext);
+                        if (getValueFunc != null)
                         {
-                            SetTemplateMatchingValue(card, template, matching.Value);
-                            dataContext.Set<CardDetailTemplateMatch>().Add(matching);
-                        }
-                        else
-                        {
-                            logger.LogInformation("Matching already processed.");
+                            executablesAfterCreation.Add((card, template, getValueFunc));
                         }
                     }
+
                     if (counter > 0 && counter % 100 == 0)
                     {
                         counter++;
@@ -76,13 +75,54 @@ namespace Integrator.Logic
                 }
             }
 
+            // создание необходимых новых категорий и брендов
+            foreach (var referenceCreation in referencesCreationContext)
+            {
+                switch (referenceCreation.Key.applyField)
+                {
+                    case TemplateApplyField.Brand:
+                        dataContext.Set<Brand>().Add((Brand)referenceCreation.Value);
+                        break;
+                    case TemplateApplyField.Category:
+                        dataContext.Set<Category>().Add((Category)referenceCreation.Value);
+                        break;
+                    case TemplateApplyField.Size:
+                        dataContext.Set<Size>().Add((Size)referenceCreation.Value);
+                        break;
+                }
+            }
+
+            await dataContext.SaveChangesAsync();
+
+            sizes = await dataContext.Set<Size>()
+                .ToListAsync();
+            brands = await dataContext.Set<Brand>()
+                .ToListAsync();
+            categories = await dataContext.Set<Category>()
+                .ToListAsync();
+
+            // обработка шаблонами карточек отложенными новыми значениями категорий, брендов, размеров
+            counter = 0;
+            foreach (var executable in executablesAfterCreation)
+            {
+                counter++;
+                AddMatchingToContext(executable.card, executable.template, executable.getValueFunc()); // функция получения значения идентификатора(ов) из сохраненных топономических единиц (категорий, брендов, размеров)
+
+                if (counter > 0 && counter % 100 == 0)
+                {
+                    counter++;
+                    await dataContext.SaveChangesAsync();
+                    logger.LogInformation($"Already matched: {counter}");
+                }
+            }
+
             await dataContext.SaveChangesAsync();
         }
 
 
         #region Вспомогательные методы
 
-        private (bool matched, string? value) ProcessCardWithTemplate(Card card, Template template, List<Size> allSizes, List<Brand> allBrands)
+        private (bool matched, string? value, string? newValue) ProcessCardWithTemplate(Card card, Template template, List<Size> allSizes, List<Brand> allBrands, List<Category> allCategories)
         {
             bool isSuccess;
             string? applyValue = null;
@@ -132,7 +172,7 @@ namespace Integrator.Logic
                     case TemplateApplyField.Price:
                         if (decimal.TryParse(applyValue, out var price)) // 1 group must be here TODO: debug
                         {
-                            return (true, price.ToString());
+                            return (true, price.ToString(), null);
                         }
                         else
                         {
@@ -141,40 +181,40 @@ namespace Integrator.Logic
                                 $"Шаблон {template.Id}. " +
                                 $"Значение '{applyValue}' не подходит для цены.");
 
-                            return (false, null);
+                            return (false, null, null);
                         }
                     case TemplateApplyField.Brand:
-                        var newBrand = allBrands.FirstOrDefault(x => x.Name == template.ApplyValue);
+                        var applyBrand = allBrands.FirstOrDefault(x => x.Name == template.ApplyValue);
 
-                        if (newBrand == null)
+                        if (applyBrand == null)
                         {
                             logger.LogWarning(
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
                                 $"Бренд с именем '{applyValue}' не найден в базе");
-                            return (false, null);
+                            return (false, null, applyValue);
                         }
 
-                        return (true, newBrand.Id.ToString());
-                    case TemplateApplyField.Size:
-                        List<decimal> templateSetSizeValues;
-                        try
-                        {
-                            templateSetSizeValues = applyValue
-                                .Split(',')
-                                .Select(decimal.Parse)
-                                .ToList(); // semicolon-seperated values must be here
-                        }
-                        catch (FormatException)
+                        return (true, applyBrand.Id.ToString(), null);
+                    case TemplateApplyField.Category:
+                        var applyCategory = allCategories.FirstOrDefault(x => x.Name == template.ApplyValue);
+
+                        if (applyCategory == null)
                         {
                             logger.LogWarning(
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
-                                $"Размеры шаблона не могут быть распознаны: '{applyValue}'");
-                            return (false, null);
+                                $"Категория с именем '{applyValue}' не найдена в базе");
+                            return (false, null, applyValue);
                         }
 
-                        var newSizes = allSizes
+                        return (true, applyCategory.Id.ToString(), null);
+                    case TemplateApplyField.Size:
+                        List<string> templateSetSizeValues = applyValue
+                            .Split(',')
+                            .ToList(); // semicolon-seperated values must be here
+
+                        var applySizes = allSizes
                             .Where(x => templateSetSizeValues.Contains(x.Value))
                             .Select(x => new CardDetailSize
                             {
@@ -183,22 +223,78 @@ namespace Integrator.Logic
                             })
                             .ToList();
 
-                        if (newSizes.Count == 0)
+                        if (applySizes.Count == 0)
                         {
-                            return (false, null);
+                            return (false, null, applyValue);
                         }
 
-                        return (true, string.Join(',', newSizes.Select(x => x.SizeId)));
+                        var valueSizes = string.Join(',', applySizes.Select(x => x.SizeId));
+                        if (applySizes.Count != templateSetSizeValues.Count)
+                        {
+                            var newSizes = templateSetSizeValues.Where(x => !allSizes.Select(y => y.Value).Contains(x));
+                            var newValueSizes = string.Join(',', newSizes);
+                            return (true, valueSizes, newValueSizes);
+                        }
+
+                        return (true, valueSizes, null);
                     case TemplateApplyField.Color:
                     case TemplateApplyField.Material:
                     case TemplateApplyField.Model:
-                        return (true, applyValue);
+                        return (true, applyValue, null);
                     default:
-                        return (false, null);
+                        return (false, null, null);
                 }
             }
 
-            return (false, null);
+            return (false, null, null);
+        }
+
+        private Func<string> ProcessNotMatchedValue(Card card, Template template, string newValue, Dictionary<(TemplateApplyField, string), object> context)
+        {
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+#pragma warning disable CS8601 // Possible null reference assignment.
+            switch (template.ApplyField)
+            {
+                case TemplateApplyField.Brand:
+                    
+                    if (!context.ContainsKey((template.ApplyField, newValue)))
+                    {
+                        var newBrand = new Brand() { Name = newValue };
+                        context.Add((template.ApplyField, newValue), newBrand);
+                    }
+
+                    var brand = (Brand)context[(template.ApplyField, newValue)];
+                    return brand.Id.ToString;
+                case TemplateApplyField.Category:
+                    if (!context.ContainsKey((template.ApplyField, newValue)))
+                    {
+                        var newCategory = new Category() { Name = newValue };
+                        context.Add((template.ApplyField, newValue), newCategory);
+                    }
+
+                    var category = (Category)context[(template.ApplyField, newValue)];
+                    return category.Id.ToString;
+                case TemplateApplyField.Size:
+                    var newSizeValues = newValue.Split(',').ToList();
+                    var newSizes = new List<Size>();
+
+                    foreach(var newSizeValue in newSizeValues)
+                    {
+                        if (!context.ContainsKey((template.ApplyField, newSizeValue)))
+                        {
+                            var newSize = new Size() { Value = newSizeValue };
+                            context.Add((template.ApplyField, newSizeValue), newSize);
+                        }
+
+                        newSizes.Add((Size)context[(template.ApplyField, newSizeValue)]);
+                    }
+
+                    return () => string.Join(",", newSizes.Select(x => x.Id));
+                default:
+                    return null;
+            }
+#pragma warning restore CS8601 // Possible null reference assignment.
+#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
         }
 
         private void SetTemplateMatchingValue(Card card, Template template, string? matchingValue)
@@ -223,9 +319,19 @@ namespace Integrator.Logic
                             && newBrandId != card.CardDetail.BrandId,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
-                                $"Бренд '{card.CardDetail.BrandId}:{card.CardDetail.Brand.Name}' перезаписан новым значением '{newBrandId}:{template.ApplyValue}'");
+                                $"Бренд '{card.CardDetail.BrandId}:{card.CardDetail.Brand?.Name ?? string.Empty}' перезаписан новым значением '{newBrandId}:{template.ApplyValue}'");
 
                         card.CardDetail.BrandId = newBrandId;
+                        break;
+                    case TemplateApplyField.Category:
+                        var newCategoryId = int.Parse(matchingValue);
+                        logger.LogWarningIf(card.CardDetail.CategoryId != null
+                            && newCategoryId != card.CardDetail.CategoryId,
+                                $"Карточка {card.Id}. " +
+                                $"Шаблон {template.Id}. " +
+                                $"Бренд '{card.CardDetail.CategoryId}:{card.CardDetail.Category?.Name ?? string.Empty}' перезаписан новым значением '{newCategoryId}:{template.ApplyValue}'");
+
+                        card.CardDetail.CategoryId = newCategoryId;
                         break;
                     case TemplateApplyField.Color:
                         logger.LogWarningIf(card.CardDetail.Color != matchingValue,
@@ -280,6 +386,35 @@ namespace Integrator.Logic
                     default:
                         break;
                 }
+            }
+        }
+
+        private CardDetailTemplateMatch? AddMatchingToContext(Card card, Template template, string value)
+        {
+            var matching = new CardDetailTemplateMatch()
+            {
+                CardDetailId = card.Id,
+                TemplateId = template.Id,
+
+                Value = value
+            };
+
+            if (card.CardDetail == null)
+            {
+                card.CardDetail = new() { TemplateMatches = new() };
+            }
+
+            if (!card.CardDetail.TemplateMatches.Any(x =>
+                x.TemplateId == matching.TemplateId))
+            {
+                SetTemplateMatchingValue(card, template, matching.Value);
+                dataContext.Set<CardDetailTemplateMatch>().Add(matching);
+                return matching;
+            }
+            else
+            {
+                logger.LogInformation("Matching already processed.");
+                return null;
             }
         }
 

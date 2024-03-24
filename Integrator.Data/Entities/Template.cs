@@ -57,6 +57,7 @@
         Size = 4,
         Model = 5,
         Material = 6,
+        Category = 7
     }
 
     public enum TemplateSearchField

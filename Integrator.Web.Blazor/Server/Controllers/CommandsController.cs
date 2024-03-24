@@ -3,19 +3,25 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Integrator.Web.Blazor.Server.Controllers
 {
-    public class CommandsController
+    [ApiController]
+    [Route("[controller]/[action]")]
+    public class CommandsController : ControllerBase
     {
         private readonly TemplateLogic templateLogic;
         private readonly ShopDirectoryLogic shopDirectoryLogic;
         private readonly TranslateLogic translateLogic;
+        private readonly ReplacementLogic replacementLogic;
         private readonly ILogger<CommandsController> logger;
+        private readonly SameCardsLogic sameCardsLogic;
 
-        public CommandsController(ILogger<CommandsController> logger, TemplateLogic templateLogic, ShopDirectoryLogic shopDirectoryLogic, TranslateLogic translateLogic)
+        public CommandsController(ILogger<CommandsController> logger, TemplateLogic templateLogic, ShopDirectoryLogic shopDirectoryLogic, TranslateLogic translateLogic, ReplacementLogic replacementLogic, SameCardsLogic sameCardsLogic)
         {
             this.templateLogic = templateLogic;
             this.logger = logger;
             this.shopDirectoryLogic = shopDirectoryLogic;
             this.translateLogic = translateLogic;
+            this.replacementLogic = replacementLogic;
+            this.sameCardsLogic = sameCardsLogic;
         }
 
         #region Sync Shop Directories
@@ -44,8 +50,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         public async Task RecalculateCards()
         {
             await templateLogic.ProcessCardsWithTemplates();
-            //TODO: reimplement
-            return;
+
             await RecalculatePropsSearch();
             await RecalculatePropsApply();
         }
@@ -69,7 +74,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         [HttpPost]
         public async Task MarkSameCards()
         {
-            await Task.CompletedTask;
+            await sameCardsLogic.MarkSameCards();
         }
 
         #endregion
@@ -79,8 +84,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         [HttpPost]
         public async Task RecalculateTexts()
         {
-            await RecalculateTextSearch();
-            await RecalculateTextApply();
+            await replacementLogic.ProcessCardsWithReplacements();
         }
 
         private async Task RecalculateTextSearch()
@@ -94,6 +98,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
             logger.LogInformation("Recalculate text apply.");
             await Task.CompletedTask;
         }
+
         #endregion
     }
 }

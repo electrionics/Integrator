@@ -1,10 +1,13 @@
+using Microsoft.EntityFrameworkCore;
 using FluentValidation;
+using Serilog;
+
 using Integrator.Data;
+using Integrator.Logic;
+
 using Integrator.Web.Blazor.Server;
 using Integrator.Web.Blazor.Shared;
 using Integrator.Web.Blazor.Shared.Validators;
-using Microsoft.EntityFrameworkCore;
-using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +24,12 @@ builder.Services.AddDbContext<IntegratorDataContext>((options) =>
 
 builder.Services.AddScoped<IValidator<TemplateEditViewModel>, TemplateEditViewModelValidator>();
 builder.Services.AddScoped<IValidator<ReplacementEditViewModel>, ReplacementEditViewModelValidator>();
+
+builder.Services.AddScoped<ShopDirectoryLogic>();
+builder.Services.AddScoped<TranslateLogic>();
+builder.Services.AddScoped<TemplateLogic>();
+builder.Services.AddScoped<ReplacementLogic>();
+builder.Services.AddScoped<SameCardsLogic>();
 
 var logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)

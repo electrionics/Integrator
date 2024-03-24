@@ -3,6 +3,7 @@
 @using Integrator.Web.Blazor.Shared
 @using Syncfusion.Blazor.Grids
 @using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Popups
 
 @inject HttpClient Http
 
@@ -32,82 +33,83 @@ else
         <GridPageSettings PageSize="50"/>
         <GridFilterSettings Type="FilterType.Excel"/>
         <GridColumns>
+            @* Width="120"  *@
             <GridColumn Field="@nameof(CardViewModel.ShopName)"
                         HeaderText="Магазин"
-                        Width="120" 
-                        AllowFiltering="true"/>
+                        
+                        AllowFiltering="true" />@* Width="100" *@
             <GridColumn Field="@nameof(CardViewModel.CardId)"
                         HeaderText="Номер карточки"
-                        Width="100"
+                        
                         AllowFiltering="true"
                         AllowGrouping="false">
-            </GridColumn>
+            </GridColumn>@* Width="200" *@
             <GridColumn Field="@nameof(CardViewModel.CardPathSource)"
                         HeaderText="Путь карточки (исходн.)"
-                        Width="200"
+                        
                         AllowFiltering="true"
-                        AllowGrouping="true"/>
+                        AllowGrouping="true" />@* Width="200" *@
             <GridColumn Field="@nameof(CardViewModel.CardPathEng)"
                         HeaderText="Путь карточки (англ.)"
-                        Width="200"
+                        
                         AllowFiltering="true"
-                        AllowGrouping="true" />
+                        AllowGrouping="true" />@* Width="100" *@
             <GridColumn Field="@nameof(CardViewModel.ImageUrls)"
                         HeaderText="Изображения"
-                        Width="100"
+                        
                         AllowFiltering="false"
                         AllowGrouping="false">
                 <Template>
                     @{
                         var model = (CardViewModel)context;
-                        foreach (var url in model.ImageUrls)
+                        if (model.ImageUrls.Count > 0)
                         {
-                            <a href="@url" target="_blank">
-                                <img height="100" src="@url"/>
-                            </a>
-                            break;
-                            <br/>
+                            <img width="100" src="@model.ImageUrls[0]" @onclick="() => ShowImagesPopup(model.ImageUrls)" style="cursor: pointer;" />
+                        }
+                        else
+                        {
+                            <text>Нет изображений</text>
                         }
                     }
                 </Template>
-            </GridColumn>
+            </GridColumn>@* Width="130" *@
             <GridColumn Field="@nameof(CardViewModel.CategoryName)"
                         HeaderText="Категория"
-                        Width="130"
+                        
                         AllowFiltering="true"
-                        AllowGrouping="true" />
+                        AllowGrouping="true" />@* Width="100" *@
             <GridColumn Field="@nameof(CardViewModel.BrandName)"
                         HeaderText="Бренд"
-                        Width="100"
+                        
                         AllowFiltering="true"
                         AllowGrouping="true">
-            </GridColumn>
+            </GridColumn>@* Width="100" *@
             <GridColumn Field="@nameof(CardViewModel.Price)"
                         HeaderText="Цена"
-                        Width="100"
+                        
                         AllowFiltering="true"
-                        AllowGrouping="true" />
+                        AllowGrouping="true" />@* Width="100" *@
             <GridColumn Field="@nameof(CardViewModel.Color)"
                         HeaderText="Цвет"
-                        Width="100"
+                        
                         AllowFiltering="true"
                         AllowGrouping="true">
-            </GridColumn>
+            </GridColumn>@* Width="120" *@
             <GridColumn Field="@nameof(CardViewModel.SizeStr)"
                         HeaderText="Размеры"
-                        Width="120"
+                        
                         AllowFiltering="true"
                         AllowGrouping="true">
-            </GridColumn>
+            </GridColumn>@* Width="150" *@
             <GridColumn Field="@nameof(CardViewModel.Information)"
                         HeaderText="Информация"
-                        Width="150"
+                        
                         AllowFiltering="true"
                         AllowGrouping="true">
-            </GridColumn>
+            </GridColumn>@* Width="250" *@
             <GridColumn Field="@nameof(CardViewModel.SourceContent)"
                         HeaderText="Описание (исходн.)"
-                        Width="250"
+                        
                         AllowFiltering="true"
                         AllowGrouping="true">
                 <Template>
@@ -120,10 +122,10 @@ else
                         </text>
                     }
                 </Template>
-            </GridColumn>
+            </GridColumn>@* Width="300" *@
             <GridColumn Field="@nameof(CardViewModel.EngContent)"
                         HeaderText="Описание (англ.)"
-                        Width="300"
+                        
                         AllowFiltering="true"
                         AllowGrouping="true">
                 <Template>
@@ -136,10 +138,10 @@ else
                         </text>
                     }
                 </Template>
-            </GridColumn>
+            </GridColumn>@* Width="300" *@
             <GridColumn Field="@nameof(CardViewModel.RusContent)"
                         HeaderText="Описание (рус.)"
-                        Width="300"
+                        
                         AllowFiltering="true"
                         AllowGrouping="true">
                 <Template>
@@ -154,13 +156,39 @@ else
             </GridColumn>
         </GridColumns>
     </SfGrid>
+
+    <SfDialog Width="630px" IsModal="true" @bind-Visible="@ImagesVisible" ShowCloseIcon="true" CloseOnEscape="true" >
+        <DialogAnimationSettings Effect="DialogEffect.FadeZoom"/>
+        <DialogEvents OnOverlayModalClick="@OverlayClick"/>
+        <DialogTemplates>
+            <Header>
+                Изображения карточки
+            </Header>
+            <Content>
+                    @{
+                        var counter = 0;
+                        foreach (var url in ImageUrls)
+                        {
+                            <a href="@url" target="_blank">
+                                <img width="200" src="@url" />
+                            </a>
+                            counter++;
+                            if (counter % 3 == 0)
+                            {
+                                <br />
+                            }
+                        }
+                    }
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
 }
 
 @code {
     private CardViewModel[]? cards;
 
     private bool ExpandedText { get; set; } = false;
-    private const int CollapsedMaxLength = 120;
+    private const int CollapsedMaxLength = 80;
 
     protected override async Task OnInitializedAsync()
     {
@@ -170,5 +198,20 @@ else
     private void ToggleExpanded()
     {
         ExpandedText = !ExpandedText;
+    }
+
+
+    private bool ImagesVisible { get; set; }
+    private List<string> ImageUrls{ get; set; }
+
+    private void ShowImagesPopup(List<string> imageUrls)
+    {
+        ImagesVisible = true;
+        ImageUrls = imageUrls;
+    }
+
+    private void OverlayClick(OverlayModalClickEventArgs args)
+    {
+        ImagesVisible = false;
     }
 }

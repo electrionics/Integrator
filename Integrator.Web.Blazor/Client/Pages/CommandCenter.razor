@@ -1,60 +1,99 @@
 ﻿@page "/commands"
 
 @using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.SplitButtons
 
 @inject HttpClient Http
 
 <h3>Командный центр</h3>
 
-<button class="btn btn-primary" @onclick="@(async () => await RunSyncShopDirectories())">
-    <i class="oi oi-folder" /> Запустить синхронизацию папок
-</button>
+<SfProgressButton @ref="RunSyncBtn" OnClick="RunSyncShopDirectories" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-folder" Content="Запустить синхронизацию папок">
+    <ProgressButtonSpinSettings Position="SpinPosition.Right" />
+</SfProgressButton>
 <br />
 <br />
-<button class="btn btn-primary" @onclick="@(async () => await RunTranslations())">
-    <i class="oi oi-info" /> Запустить перевод новых карточек
-</button>
+<SfProgressButton @ref="RunTranslateBtn" OnClick="RunTranslations" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-info" Content="Запустить перевод новых карточек">
+    <ProgressButtonSpinSettings Position="SpinPosition.Right" />
+</SfProgressButton>
 <br />
 <br />
-<button class="btn btn-primary" @onclick="@(async () => await RunRecalculation())">
-    <i class="oi oi-reload" /> Запустить шаблоны структуры
-</button>
+<SfProgressButton @ref="RunRecalculateBtn" OnClick="RunRecalculation" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-reload" Content="Запустить шаблоны структуры">
+    <ProgressButtonSpinSettings Position="SpinPosition.Right" />
+</SfProgressButton>
 <br />
 <br />
-<button class="btn btn-primary" @onclick="@(async () => await RunReplacements())">
-    <i class="oi oi-command" /> Запустить замены в тексте
-</button>
+<SfProgressButton @ref="RunReplaceBtn" OnClick="RunReplacements" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-command" Content="Запустить замены в тексте">
+    <ProgressButtonSpinSettings Position="SpinPosition.Right" />
+</SfProgressButton>
 <br />
 <br />
-<button class="btn btn-primary" @onclick="@(async () => await RunSameCards())">
-    <i class="oi oi-image" /> Запустить поиск одинаковых товаров
-</button>
+<SfProgressButton @ref="RunSameBtn" OnClick="RunSameCards" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-image" Content="Запустить поиск одинаковых товаров">
+    <ProgressButtonSpinSettings Position="SpinPosition.Right" />
+</SfProgressButton>
 <br />
 <br />
+
 
 @code {
+    private bool OperationProgress { get; set; } = false;
+
+    SfProgressButton RunSyncBtn;
     private async Task RunSyncShopDirectories()
     {
+        OperationProgress = true;
+        await RunSyncBtn.StartAsync();
+
         await Http.PostAsync("Commands/SyncShopDirectories", null);
+
+        await RunSyncBtn.EndProgressAsync();
+        OperationProgress = false;
     }
 
+    SfProgressButton RunTranslateBtn;
     private async Task RunTranslations()
     {
+        OperationProgress = true;
+        await RunTranslateBtn.StartAsync();
+
         await Http.PostAsync("Commands/TranslateTexts", null);
+
+        await RunTranslateBtn.EndProgressAsync();
+        OperationProgress = false;
     }
 
+    SfProgressButton RunRecalculateBtn;
     private async Task RunRecalculation()
     {
+        OperationProgress = true;
+        await RunRecalculateBtn.StartAsync();
+
         await Http.PostAsync("Commands/RecalculateCards", null);
+
+        await RunRecalculateBtn.EndProgressAsync();
+        OperationProgress = false;
     }
 
-    private async Task RunSameCards()
-    {
-        await Http.PostAsync("Commands/MarkSameCards", null);
-    }
-
+    SfProgressButton RunReplaceBtn;
     private async Task RunReplacements()
     {
+        OperationProgress = true;
+        await RunReplaceBtn.StartAsync();
+
         await Http.PostAsync("Commands/RecalculateTexts", null);
+
+        await RunReplaceBtn.EndProgressAsync();
+        OperationProgress = false;
+    }
+
+    SfProgressButton RunSameBtn;
+    private async Task RunSameCards()
+    {
+        OperationProgress = true;
+        await RunSameBtn.StartAsync();
+
+        await Http.PostAsync("Commands/MarkSameCards", null);
+
+        await RunSameBtn.EndProgressAsync();
+        OperationProgress = false;
     }
 }

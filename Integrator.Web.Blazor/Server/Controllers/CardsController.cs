@@ -77,7 +77,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
 
                 foreach (var item in result)
                 {
-                    item.SizeStr = string.Join(", ", item.SizeValues.Select(x => x.ToString("#.#")));
+                    item.SizeStr = string.Join(", ", item.SizeValues);
 
                     if (item.CategoryId != null)
                     {

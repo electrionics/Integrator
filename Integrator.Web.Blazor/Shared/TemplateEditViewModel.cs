@@ -5,7 +5,7 @@
         public TemplateEditViewModel() 
         {
             ApplyField = 1; //(int)TemplateApplyField.Brand;
-            SearchField = 1; //(int)TemplateSearchField.SourceText;
+            SearchField = 3; //(int)TemplateSearchField.RusText;
             SearchValue = string.Empty;
         }
 

@@ -143,14 +143,14 @@ else
 
     IEnumerable<KeyValuePair<int, string>>? searchFields;
     IEnumerable<KeyValuePair<int, string>>? applyFields;
-    private IEnumerable<TemplateItemViewModel>? templates;
+    private TemplateItemViewModel[]? templates;
 
     protected override async Task OnInitializedAsync()
     {
         searchFields = await Http.GetFromJsonAsync<IEnumerable<KeyValuePair<int, string>>>("Templates/GetAvailableSearchFields");
         applyFields = await Http.GetFromJsonAsync<IEnumerable<KeyValuePair<int, string>>>("Templates/GetAvailableApplyFields");
 
-        templates = await Http.GetFromJsonAsync<IEnumerable<TemplateItemViewModel>>("Templates/GetList");
+        templates = await Http.GetFromJsonAsync<TemplateItemViewModel[]>("Templates/GetList");
     }
 
     private void AddBtnClick()
@@ -228,7 +228,7 @@ else
 
     private async Task Refresh()
     {
-        templates = await Http.GetFromJsonAsync<IEnumerable<TemplateItemViewModel>>("Templates/GetList");
+        templates = await Http.GetFromJsonAsync<TemplateItemViewModel[]>("Templates/GetList");
         await InvokeAsync(StateHasChanged);
         await DataGrid.Refresh();
     }

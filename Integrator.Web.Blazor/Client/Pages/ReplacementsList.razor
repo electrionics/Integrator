@@ -105,13 +105,13 @@ else
     private SfGrid<ReplacementItemViewModel> DataGrid;
     private ReplacementEditView ReplacementEditView;
 
-    private IEnumerable<ReplacementItemViewModel>? replacements;
+    private ReplacementItemViewModel[]? replacements;
 
     private object paramToPopup = new object();
 
     protected override async Task OnInitializedAsync()
     {
-        replacements = await Http.GetFromJsonAsync<IEnumerable<ReplacementItemViewModel>>("Replacements/GetList");
+        replacements = await Http.GetFromJsonAsync<ReplacementItemViewModel[]>("Replacements/GetList");
     }
 
     private void AddBtnClick()
@@ -189,7 +189,7 @@ else
 
     private async Task Refresh()
     {
-        replacements = await Http.GetFromJsonAsync<IEnumerable<ReplacementItemViewModel>>("Replacements/GetList");
+        replacements = await Http.GetFromJsonAsync<ReplacementItemViewModel[]>("Replacements/GetList");
         await InvokeAsync(StateHasChanged);
         await DataGrid.Refresh();
     }

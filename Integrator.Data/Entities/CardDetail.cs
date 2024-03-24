@@ -21,6 +21,22 @@
         public List<CardDetailSize> CardDetailSizes { get; set; }
 
 
+        #region Rating
+
+        private const decimal ModelSetAddition = 1.0m;
+        private const decimal SizesSetAddition = 0.8m;
+        private const decimal ColorSetAddition = 0.8m;
+        private const decimal PriceSetAddition = 0.5m;
+        private const decimal MaterialSetAddition = 0.3m;
+
+        public decimal Rating => (Model is null ? 0 : ModelSetAddition) + 
+            ((CardDetailSizes?.Count ?? 0) == 0 ? 0 : SizesSetAddition) + 
+            (Color is null ? 0 : ColorSetAddition) +
+            (Price is null ? 0 : PriceSetAddition) +
+            (Material is null ? 0 : MaterialSetAddition);
+
+        #endregion
+
         public Card Card { get; set; }
 
         public Brand Brand { get; set; }

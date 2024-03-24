@@ -6,6 +6,7 @@ using Integrator.Data.Helpers;
 using Integrator.Data;
 using Microsoft.Extensions.Logging;
 using Integrator.Shared;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace Integrator.Logic
 {
@@ -26,15 +27,24 @@ namespace Integrator.Logic
         /// <returns>Успешно (частично или полностью) обработан каждый магазин, либо один или более обработаны с ошибками уровня магазина/топономий, или не обработаны</returns>
         public async Task<bool> SyncShopsRoot()
         {
-            var shopFolderDirectories = Directory.GetDirectories($"shops");
-            var completeSuccess = true;
-
-            foreach (var shopDirectory  in shopFolderDirectories )
+            try
             {
-                completeSuccess &= await SyncShopDirectory(shopDirectory);
-            }
+                var shopRootPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "shops");
+                var shopFolderDirectories = Directory.GetDirectories(shopRootPath);
+                var completeSuccess = true;
+                
+                foreach (var shopDirectory in shopFolderDirectories)
+                {
+                    completeSuccess &= await SyncShopDirectory(GetFolderName(shopDirectory));
+                }
 
-            return completeSuccess;
+                return completeSuccess;
+            }
+            catch(Exception ex)
+            {
+                logger.LogError(ex, "Something wrong with shop directories!");
+                return false;
+            }
         }
 
         /// <summary>
@@ -64,7 +74,7 @@ namespace Integrator.Logic
 
             if (shop != null)
             {
-                var shopFolderChildrenDirs = Directory.GetDirectories($"shops\\{shopFolderName}"); // TODO: path combine?
+                var shopFolderChildrenDirs = Directory.GetDirectories(GetShopDirectoryPath(shopFolderName));
 
                 logger.LogWarningIf(shopFolderChildrenDirs.Length != 2, $"Shop: {shop.Name}. WARNING!!! Count of subdirectories is {shopFolderChildrenDirs.Length}, but expected 2.");
 
@@ -107,8 +117,8 @@ namespace Integrator.Logic
             string? brandPath, categoryPath;
             try
             {
-                brandPath = toponomyCandidateDirectories.SingleOrDefault(x => x.Contains("brands"));
-                categoryPath = toponomyCandidateDirectories.SingleOrDefault(x => x.Contains("categories"));
+                brandPath = toponomyCandidateDirectories.SingleOrDefault(x => GetFolderName(x).Contains("brands"));
+                categoryPath = toponomyCandidateDirectories.SingleOrDefault(x => GetFolderName(x).Contains("categories"));
             }
             catch (InvalidOperationException)
             {
@@ -181,16 +191,16 @@ namespace Integrator.Logic
                     }
                 }
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                logger.LogInformationIf(cardToAdd, $"directory {cardDirectory.Name}, text file '{textFile.Name}' was successfully processed. Card placed to list for addition.");
+                logger.LogInformationIf(cardToAdd, $"directory {cardDirectory.Name}, text file '{textFile?.Name ?? string.Empty}' was successfully processed. Card placed to list for addition.");
                 logger.LogWarningIf(!cardToAdd, $"directory {cardDirectory.Name}, text file '{textFile?.Name ?? string.Empty}' wasn't found or has no content. Card skipped.");
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
                 if (cardsToAdd.Count >= cardsBatchSize)
                 {
                     await ClearCardsBatch(cardsToAdd);
                 }
             }
+
+            await ClearCardsBatch(cardsToAdd);
         }
         // @exceptionshandled
 
@@ -246,9 +256,10 @@ namespace Integrator.Logic
                     .Select(x => new CardImage
                     {
                         FolderName = cardDirectory.Name,
-                        FolderPath = GetCardRelativeToShopDirectoryPath(cardDirectory, shopRootDirectory),
+                        FolderPath = folderPath,
                         ImageFileName = x.Name,
-                        ImageFileHash = null
+                        ImageFileHash = null,
+                        FileSizeBytes = null
                     })
                     .ToList();
 
@@ -291,6 +302,17 @@ namespace Integrator.Logic
             return cardDirectory.FullName.Replace(shopRootDirectory.FullName, string.Empty);
         }
         // @exceptionshandled
+
+        private static string GetFolderName(string directoryPath)
+        {
+            var index = directoryPath.LastIndexOf("\\");
+            return directoryPath.Substring(index + 1);
+        }
+
+        private static string GetShopDirectoryPath(string shopFolderName)
+        {
+            return Path.Join(AppDomain.CurrentDomain.BaseDirectory, "shops", shopFolderName);
+        }
 
         #endregion
     }
