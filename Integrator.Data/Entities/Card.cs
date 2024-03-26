@@ -19,15 +19,15 @@
 
         public Shop Shop { get; set; }
 
-        public CardTranslation CardTranslation { get; set; }
+        public CardTranslation Translation { get; set; }
 
         public List<CardImage> Images { get; set; }
 
-        public CardDetail CardDetail { get; set; }
+        public CardDetail Detail { get; set; }
 
 
-        public BrandDraft BrandDraft { get; set; }
+        public List<CardSimilar> Bases { get; set; }
 
-        public CategoryDraft CategoryDraft { get; set; }
+        public List<CardSimilar> Similarities { get; set; }
     }
 }

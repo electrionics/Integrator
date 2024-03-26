@@ -2,11 +2,6 @@
 using Integrator.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Integrator.Logic
 {
@@ -24,20 +19,20 @@ namespace Integrator.Logic
         public async Task ProcessCardsWithReplacements()
         {
             var cards = await dataContext.Set<Card>()
-                .Include(x => x.CardTranslation).Include(x => x.CardDetail)
-                .Where(x => x.CardTranslation != null)
+                .Include(x => x.Translation).Include(x => x.Detail)
+                .Where(x => x.Translation != null)
                 .ToListAsync();
 
             var replacements = await dataContext.Set<Replacement>().AsNoTracking().OrderBy(x => x.Order).ToListAsync();
 
             foreach (var card in cards) 
             {
-                if (card.CardDetail == null)
+                if (card.Detail == null)
                 {
-                    card.CardDetail = new();
+                    card.Detail = new();
                 }
 
-                card.CardDetail.ContentRus = card.CardTranslation.ContentRus;
+                card.Detail.ContentRus = card.Translation.ContentRus;
 
                 foreach (var replacement in replacements)
                 {

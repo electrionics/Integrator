@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Drawing;
 using System.Security.Cryptography;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Integrator.Logic
 {
@@ -59,7 +58,7 @@ namespace Integrator.Logic
             #region Compare Images
 
             images = await dataContext.Set<CardImage>().AsNoTracking()
-                .Include(x => x.Card).ThenInclude(x => x.CardDetail).ThenInclude(x => x.CardDetailSizes)
+                .Include(x => x.Card).ThenInclude(x => x.Detail).ThenInclude(x => x.Sizes)
                 .Include(x => x.Card).ThenInclude(x => x.Shop)
                 .Include(x => x.BaseImages)
                 .Include(x => x.SimilarImages)
@@ -99,13 +98,13 @@ namespace Integrator.Logic
             { 
                 foreach(var image in imageSet)
                 {
-                    if (image.Card.CardDetail == null)
+                    if (image.Card.Detail == null)
                     {
-                        image.Card.CardDetail = new() { CardId = image.CardId };
+                        image.Card.Detail = new() { CardId = image.CardId };
                     }
                 }
 
-                var imageList = imageSet.OrderByDescending(x => x.Card.CardDetail.Rating).ToList();
+                var imageList = imageSet.OrderByDescending(x => x.Card.Detail.Rating).ToList();
 
                 var baseImage = imageList.First();
                 var sameImages = imageList.Skip(1).ToList();

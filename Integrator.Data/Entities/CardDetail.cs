@@ -18,7 +18,7 @@
 
         public string ContentRus { get; set; }
 
-        public List<CardDetailSize> CardDetailSizes { get; set; }
+        public List<CardDetailSize> Sizes { get; set; }
 
 
         #region Rating
@@ -30,7 +30,7 @@
         private const decimal MaterialSetAddition = 0.3m;
 
         public decimal Rating => (Model is null ? 0 : ModelSetAddition) + 
-            ((CardDetailSizes?.Count ?? 0) == 0 ? 0 : SizesSetAddition) + 
+            ((Sizes?.Count ?? 0) == 0 ? 0 : SizesSetAddition) + 
             (Color is null ? 0 : ColorSetAddition) +
             (Price is null ? 0 : PriceSetAddition) +
             (Material is null ? 0 : MaterialSetAddition);

@@ -15,9 +15,9 @@
 
         public void ApplyTo(Card card)
         {
-            if (card.CardDetail != null)
+            if (card.Detail != null)
             {
-                card.CardDetail.ContentRus = card.CardDetail.ContentRus.Replace(SearchValue, ApplyValue);
+                card.Detail.ContentRus = card.Detail.ContentRus.Replace(SearchValue, ApplyValue);
             }
         }
     }

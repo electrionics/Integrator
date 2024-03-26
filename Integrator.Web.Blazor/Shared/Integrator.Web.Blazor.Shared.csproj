@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Integrator.Data\Integrator.Data.csproj" />
+    <ProjectReference Include="..\..\Integrator.Shared\Integrator.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

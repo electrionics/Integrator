@@ -26,10 +26,10 @@ namespace Integrator.Logic
                 .OrderBy(x => x.Order)
                 .ToListAsync();
             var cards = await dataContext.Set<Card>()
-                .Include(x => x.CardTranslation)
-                .Include(x => x.CardDetail).ThenInclude(x => x.CardDetailSizes)
-                .Include(x => x.CardDetail).ThenInclude(x => x.Brand)
-                .Include(x => x.CardDetail).ThenInclude(x => x.TemplateMatches)
+                .Include(x => x.Translation)
+                .Include(x => x.Detail).ThenInclude(x => x.Sizes)
+                .Include(x => x.Detail).ThenInclude(x => x.Brand)
+                .Include(x => x.Detail).ThenInclude(x => x.TemplateMatches)
                 .ToListAsync();
 
             var sizes = await dataContext.Set<Size>()
@@ -306,56 +306,56 @@ namespace Integrator.Logic
                     case TemplateApplyField.Price:
 
                         var price = decimal.Parse(matchingValue);
-                        logger.LogWarningIf(card.CardDetail.Price != null && card.CardDetail.Price != price,
+                        logger.LogWarningIf(card.Detail.Price != null && card.Detail.Price != price,
                             $"Карточка {card.Id}. " +
                             $"Шаблон {template.Id}. " +
-                            $"Значение цены {card.CardDetail.Price} перезаписано новым значением {price}.");
+                            $"Значение цены {card.Detail.Price} перезаписано новым значением {price}.");
 
-                        card.CardDetail.Price = price;
+                        card.Detail.Price = price;
                         break;
                     case TemplateApplyField.Brand:
                         var newBrandId = int.Parse(matchingValue);
-                        logger.LogWarningIf(card.CardDetail.BrandId != null
-                            && newBrandId != card.CardDetail.BrandId,
+                        logger.LogWarningIf(card.Detail.BrandId != null
+                            && newBrandId != card.Detail.BrandId,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
-                                $"Бренд '{card.CardDetail.BrandId}:{card.CardDetail.Brand?.Name ?? string.Empty}' перезаписан новым значением '{newBrandId}:{template.ApplyValue}'");
+                                $"Бренд '{card.Detail.BrandId}:{card.Detail.Brand?.Name ?? string.Empty}' перезаписан новым значением '{newBrandId}:{template.ApplyValue}'");
 
-                        card.CardDetail.BrandId = newBrandId;
+                        card.Detail.BrandId = newBrandId;
                         break;
                     case TemplateApplyField.Category:
                         var newCategoryId = int.Parse(matchingValue);
-                        logger.LogWarningIf(card.CardDetail.CategoryId != null
-                            && newCategoryId != card.CardDetail.CategoryId,
+                        logger.LogWarningIf(card.Detail.CategoryId != null
+                            && newCategoryId != card.Detail.CategoryId,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
-                                $"Бренд '{card.CardDetail.CategoryId}:{card.CardDetail.Category?.Name ?? string.Empty}' перезаписан новым значением '{newCategoryId}:{template.ApplyValue}'");
+                                $"Бренд '{card.Detail.CategoryId}:{card.Detail.Category?.Name ?? string.Empty}' перезаписан новым значением '{newCategoryId}:{template.ApplyValue}'");
 
-                        card.CardDetail.CategoryId = newCategoryId;
+                        card.Detail.CategoryId = newCategoryId;
                         break;
                     case TemplateApplyField.Color:
-                        logger.LogWarningIf(card.CardDetail.Color != matchingValue,
+                        logger.LogWarningIf(card.Detail.Color != matchingValue,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
-                                $"Цвет '{card.CardDetail.Color}' перезаписан новым значением '{matchingValue}'");
+                                $"Цвет '{card.Detail.Color}' перезаписан новым значением '{matchingValue}'");
 
-                        card.CardDetail.Color = matchingValue;
+                        card.Detail.Color = matchingValue;
                         break;
                     case TemplateApplyField.Model:
-                        logger.LogWarningIf(card.CardDetail.Model != matchingValue,
+                        logger.LogWarningIf(card.Detail.Model != matchingValue,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
-                                $"Модель '{card.CardDetail.Model}' перезаписана новым значением '{matchingValue}'");
+                                $"Модель '{card.Detail.Model}' перезаписана новым значением '{matchingValue}'");
 
-                        card.CardDetail.Model = matchingValue;
+                        card.Detail.Model = matchingValue;
                         break;
                     case TemplateApplyField.Material:
-                        logger.LogWarningIf(card.CardDetail.Material != matchingValue,
+                        logger.LogWarningIf(card.Detail.Material != matchingValue,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
-                                $"Материал '{card.CardDetail.Material}' перезаписан новым значением '{matchingValue}'");
+                                $"Материал '{card.Detail.Material}' перезаписан новым значением '{matchingValue}'");
 
-                        card.CardDetail.Material = matchingValue;
+                        card.Detail.Material = matchingValue;
                         break;
                     case TemplateApplyField.Size:
                         var newSizeIds = matchingValue
@@ -368,14 +368,14 @@ namespace Integrator.Logic
                             CardId = card.Id
                         });
 
-                        var beforeCount = card.CardDetail.CardDetailSizes.Count;
+                        var beforeCount = card.Detail.Sizes.Count;
                         var newCount = newSizeIds.Count;
 
-                        card.CardDetail.CardDetailSizes = card.CardDetail.CardDetailSizes
+                        card.Detail.Sizes = card.Detail.Sizes
                             .UnionBy(newSizes, x => x.SizeId)
                             .ToList();
 
-                        var afterCount = card.CardDetail.CardDetailSizes.Count;
+                        var afterCount = card.Detail.Sizes.Count;
 
                         logger.LogWarningIf(beforeCount + newCount != afterCount,
                                 $"Карточка {card.Id}. " +
@@ -399,12 +399,12 @@ namespace Integrator.Logic
                 Value = value
             };
 
-            if (card.CardDetail == null)
+            if (card.Detail == null)
             {
-                card.CardDetail = new() { TemplateMatches = new() };
+                card.Detail = new() { TemplateMatches = new() };
             }
 
-            if (!card.CardDetail.TemplateMatches.Any(x =>
+            if (!card.Detail.TemplateMatches.Any(x =>
                 x.TemplateId == matching.TemplateId))
             {
                 SetTemplateMatchingValue(card, template, matching.Value);

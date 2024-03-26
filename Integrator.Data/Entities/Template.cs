@@ -31,15 +31,15 @@
                     case TemplateSearchField.SourceText:
                         return c => c.TextFileContent;
                     case TemplateSearchField.EngText:
-                        return c => c.CardTranslation.ContentEng;
+                        return c => c.Translation.ContentEng;
                     case TemplateSearchField.RusText:
-                        return c => c.CardTranslation.ContentRus;
+                        return c => c.Translation.ContentRus;
                     case TemplateSearchField.SourcePath:
                         return c => c.FolderPath;
                     case TemplateSearchField.EngPath:
-                        return c => c.CardTranslation.TitleEng;
+                        return c => c.Translation.TitleEng;
                     case TemplateSearchField.RusPath:
-                        return c => c.CardTranslation.TitleRus;
+                        return c => c.Translation.TitleRus;
                     case TemplateSearchField.Info:
                         return c => c.InfoContent;
                     default:

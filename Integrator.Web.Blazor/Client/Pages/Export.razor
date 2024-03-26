@@ -1,0 +1,45 @@
+﻿@page "/export"
+
+@using Integrator.Web.Blazor.Shared
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.SplitButtons
+@using Syncfusion.Blazor.Popups
+
+@inject HttpClient Http
+@inject SfDialogService DialogSerivce
+
+<h3>Экспорт товаров</h3>
+
+<SfProgressButton @ref="ExportBtn" OnClick="ExportBtnClick" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-spreadsheet" Content="Экспортировать товары">
+    <ProgressButtonSpinSettings Position="SpinPosition.Right" />
+</SfProgressButton>
+
+@{
+    if (DownloadUrl != null)
+    {
+        <br/>
+        <a href="@DownloadUrl" target="_blank">Скачать файл</a>
+    }
+}
+
+@code{
+    private string? DownloadUrl { get; set; }
+
+    private bool OperationProgress { get; set; } = false;
+
+    SfProgressButton ExportBtn;
+    private async Task ExportBtnClick()
+    {
+        OperationProgress = true;
+        await ExportBtn.StartAsync();
+
+        DownloadUrl = (await Http.GetFromJsonAsync<ExportFileViewModel?>("Export/GenerateExportFile"))?.Url;
+
+        await ExportBtn.EndProgressAsync();
+        OperationProgress = false;
+
+        if (DownloadUrl == null){
+            await DialogSerivce.AlertAsync("Не удалось экспортировать товары.", "Ошибка!");
+        }
+    }
+}

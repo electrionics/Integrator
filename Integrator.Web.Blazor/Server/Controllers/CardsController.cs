@@ -27,11 +27,11 @@ namespace Integrator.Web.Blazor.Server.Controllers
             try
             {
                 var data = await dataContext.Set<Card>().AsNoTracking()
-                        .Include(x => x.CardTranslation)
+                        .Include(x => x.Translation)
                         .Include(x => x.Shop)
                         .Include(x => x.Images)
-                        .Include(x => x.CardDetail).ThenInclude(x => x.CardDetailSizes).ThenInclude(x => x.Size)
-                    .Where(x => x.CardDetail != null)
+                        .Include(x => x.Detail).ThenInclude(x => x.Sizes).ThenInclude(x => x.Size)
+                    .Where(x => x.Detail != null)
                     .ToListAsync();
 
                 var result = data
@@ -44,25 +44,25 @@ namespace Integrator.Web.Blazor.Server.Controllers
                             CardId = x.Id,
 
                             CardPathSource = x.FolderPath,
-                            CardPathEng = x.CardTranslation.TitleEng,
-                            CardPathRus = x.CardTranslation.TitleEng,
+                            CardPathEng = x.Translation.TitleEng,
+                            CardPathRus = x.Translation.TitleEng,
 
                             SourceContent = x.TextFileContent,
-                            EngContent = x.CardTranslation.ContentEng,
-                            RusContent = x.CardTranslation.ContentRus,
+                            EngContent = x.Translation.ContentEng,
+                            RusContent = x.Translation.ContentRus,
 
                             ShopName = x.Shop.Name,
                             ShopId = x.Shop.Id,
 
                             ImageUrls = x.Images.Select(y => Path.Join(cardPath, y.ImageFileName).Replace('\\','/')).ToList(),
 
-                            CategoryId = x.CardDetail.CategoryId,
-                            BrandId = x.CardDetail.BrandId,
+                            CategoryId = x.Detail.CategoryId,
+                            BrandId = x.Detail.BrandId,
 
-                            SizeValues = x.CardDetail.CardDetailSizes.Select(x => x.Size.Value).ToList(),
+                            SizeValues = x.Detail.Sizes.Select(x => x.Size.Value).ToList(),
 
-                            Color = x.CardDetail.Color,
-                            Price = x.CardDetail.Price,
+                            Color = x.Detail.Color,
+                            Price = x.Detail.Price,
 
                             Information = x.InfoContent
                         };

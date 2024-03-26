@@ -47,7 +47,7 @@ namespace Integrator.Logic
             #region Prepare data and environment for translation
 
             var shop = await dataContext.Set<Shop>().FirstAsync(x => x.Name == shopName);
-            var cards = await dataContext.Set<Card>().Where(x => x.ShopId == shop.Id && x.CardTranslation == null).ToListAsync();
+            var cards = await dataContext.Set<Card>().Where(x => x.ShopId == shop.Id && x.Translation == null).ToListAsync();
 
             var client = new TranslationServiceClientBuilder
             {

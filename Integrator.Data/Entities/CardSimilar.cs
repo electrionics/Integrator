@@ -15,5 +15,10 @@
         public CardImage BaseImage { get; set; }
 
         public CardImage SimilarImage { get; set; }
+
+
+        public Card BaseCard { get; set; }
+
+        public Card SimilarCard { get; set; }
     }
 }

@@ -40,22 +40,13 @@ namespace Integrator.Data
                     .WithMany(x => x.Cards)
                     .HasForeignKey(x => x.ShopId);
 
-                entity.HasOne(x => x.CardTranslation)
+                entity.HasOne(x => x.Translation)
                     .WithOne(x => x.Card)
                     .HasForeignKey<CardTranslation>(x => x.CardId);
 
-                entity.HasOne(x => x.CardDetail)
+                entity.HasOne(x => x.Detail)
                     .WithOne(x => x.Card)
                     .HasForeignKey<CardDetail>(x => x.CardId);
-
-
-                entity.HasOne(x => x.BrandDraft)
-                    .WithOne(x => x.Card)
-                    .HasForeignKey<BrandDraft>(x => x.CardId);
-
-                entity.HasOne(x => x.CategoryDraft)
-                    .WithOne(x => x.Card)
-                    .HasForeignKey<CategoryDraft>(x => x.CardId);
             });
 
             modelBuilder.Entity<CardImage>(entity =>
@@ -78,6 +69,14 @@ namespace Integrator.Data
                 entity.HasOne(x => x.SimilarImage)
                     .WithMany(x => x.BaseImages)
                     .HasForeignKey(x => x.SimilarCardImageId);
+
+                entity.HasOne(x => x.BaseCard)
+                    .WithMany(x => x.Bases)
+                    .HasForeignKey(x => x.BaseCardId);
+
+                entity.HasOne(x => x.SimilarCard)
+                    .WithMany(x => x.Similarities)
+                    .HasForeignKey(x => x.SimilarCardId);
             });
 
             modelBuilder.Entity<CardTranslation>(entity =>
@@ -104,7 +103,7 @@ namespace Integrator.Data
                 entity.HasKey(x => new { x.CardId, x.SizeId });
 
                 entity.HasOne(x => x.CardDetail)
-                    .WithMany(x => x.CardDetailSizes)
+                    .WithMany(x => x.Sizes)
                     .HasForeignKey(x => x.CardId);
 
                 entity.HasOne(x => x.Size)

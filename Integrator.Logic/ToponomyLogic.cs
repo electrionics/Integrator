@@ -72,7 +72,7 @@ namespace Integrator.Logic
         public async Task MarkCardsWithToponomyItems()
         {
             var cards = await dataContext.Set<Card>()
-                .Include(x => x.CardDetail)
+                .Include(x => x.Detail)
                 .ToListAsync();
 
             var categoryDrafts = await dataContext.Set<CategoryDraft>()
@@ -94,9 +94,9 @@ namespace Integrator.Logic
 
             foreach (var card in cards)
             {
-                if (card.CardDetail == null)
+                if (card.Detail == null)
                 {
-                    card.CardDetail = new();
+                    card.Detail = new();
                 }
             }
 
@@ -104,7 +104,7 @@ namespace Integrator.Logic
             {
                 foreach (var card in cards.Where(x => new CategoryDraft(x).Name == draft.Name))
                 {
-                    card.CardDetail.CategoryId = draft.CategoryId;
+                    card.Detail.CategoryId = draft.CategoryId;
                     counterCategories++;
                 }
             }
@@ -112,7 +112,7 @@ namespace Integrator.Logic
             {
                 foreach (var card in cards.Where(x => new BrandDraft(x).Name == draft.Name))
                 {
-                    card.CardDetail.BrandId = draft.BrandId;
+                    card.Detail.BrandId = draft.BrandId;
                     counterBrands++;
                 }
             }
@@ -126,18 +126,18 @@ namespace Integrator.Logic
                 // условие фильтрации может содержать ошибку, если текст будет пустым или стандартным и не будет содержать данных
                 // TODO: если от данного кода не удастся отказаться, то бренд, как и категорию, нужно присваивать только товарам с некоторым рейтингом
                 // TODO: или при наличии выставленного противоположного топономического элемента.
-                foreach (var card in cards.Where(x => x.CardDetail.BrandId == null && x.TextFileContent == draft.Card.TextFileContent))
+                foreach (var card in cards.Where(x => x.Detail.BrandId == null && x.TextFileContent == draft.Card.TextFileContent))
                 {
-                    card.CardDetail.BrandId = draft.BrandId;
+                    card.Detail.BrandId = draft.BrandId;
                     counterBrands++;
                 }
             }
             foreach (var draft in categoryDrafts)
             {
                 // TODO: смотреть комментарий выше
-                foreach (var card in cards.Where(x => x.CardDetail.CategoryId == null && x.TextFileContent == draft.Card.TextFileContent))
+                foreach (var card in cards.Where(x => x.Detail.CategoryId == null && x.TextFileContent == draft.Card.TextFileContent))
                 {
-                    card.CardDetail.CategoryId = draft.CategoryId;
+                    card.Detail.CategoryId = draft.CategoryId;
                     counterCategories++;
                 }
             }
