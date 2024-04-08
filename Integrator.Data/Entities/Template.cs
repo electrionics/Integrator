@@ -1,4 +1,6 @@
-﻿namespace Integrator.Data.Entities
+﻿using System.Linq.Expressions;
+
+namespace Integrator.Data.Entities
 {
     public class Template
     {
@@ -21,8 +23,21 @@
 
         public List<CardDetailTemplateMatch> CardDetailMatches { get; set; }
 
-
+        private Func<Card, string>? _getCardText;
         public Func<Card, string> GetCardText
+        {
+            get
+            {
+                if (_getCardText == null)
+                {
+                    _getCardText = GetCardProperty.Compile();
+                }
+
+                return _getCardText;
+            }
+        }
+
+        public Expression<Func<Card, string>> GetCardProperty
         {
             get
             {

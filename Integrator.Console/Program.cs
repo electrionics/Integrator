@@ -67,6 +67,21 @@ static void WriteUserChoose(string userValue, string procedureName)
 
 static async Task CallTest()
 {
+    var list = new List<(string, int?)>
+    {
+        new ("third", 1000),
+        new ("second", 1),
+        new ("first", null)
+    };
+
+    var sorted = list.OrderBy(x => x.Item2);
+    foreach (var item in sorted)
+    {
+        Console.WriteLine(item.Item1);
+    }
+    Console.ReadKey();
+    return;
+
     string text = "𝐌𝐢𝐮𝐦𝐢 𝐱 𝐧𝐞𝐰 𝐁𝐚𝐥𝐚𝐧𝐜";
     foreach (char c in text)
     {

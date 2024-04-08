@@ -15,6 +15,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
     public class ExportController : ControllerBase
     {
         private readonly IntegratorDataContext dataContext;
+        private readonly ApplicationConfig appConfig;
         private readonly ILogger<ExportController> _logger;
 
         private string? hostBaseUrl;
@@ -31,10 +32,11 @@ namespace Integrator.Web.Blazor.Server.Controllers
             }
         }
 
-        public ExportController(ILogger<ExportController> logger, IntegratorDataContext dataContext)
+        public ExportController(ILogger<ExportController> logger, IntegratorDataContext dataContext,  ApplicationConfig appConfig)
         {
             _logger = logger;
             this.dataContext = dataContext;
+            this.appConfig = appConfig;
         }
 
         [HttpGet]
@@ -124,7 +126,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
 
                 #region Создание файла с данными экспорта
                 var fileName = "export_cards--" + DateTime.Now.ToString("yyyy_MM_dd-hh_mm_ss") + "--" + Guid.NewGuid().ToString().Substring(0, 4) + ".xlsx";
-                var filePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "exports", fileName);
+                var filePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, appConfig.RootFolder, "exports", fileName);
                 var metadata = new CardExportViewModelMetadata();
                 var generator = new ExcelGenerator();
 

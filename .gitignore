@@ -364,3 +364,5 @@ FodyWeavers.xsd
 /Integrator.Web.Blazor/Client/wwwroot/shops/
 /Integrator.Web.Blazor/Server/LogFiles
 /Integrator.Web.Blazor/Client/wwwroot/shops111/hanguang/brands品牌
+/Integrator.Web.Blazor/Client/wwwroot/exports
+/Integrator.Web.Blazor/Client/wwwroot/shops

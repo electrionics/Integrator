@@ -7,6 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="wwwroot\exports\**" />
+    <Compile Remove="wwwroot\shops111\**" />
+    <Compile Remove="wwwroot\shops\**" />
+    <Content Remove="wwwroot\exports\**" />
+    <Content Remove="wwwroot\shops111\**" />
+    <Content Remove="wwwroot\shops\**" />
+    <EmbeddedResource Remove="wwwroot\exports\**" />
+    <EmbeddedResource Remove="wwwroot\shops111\**" />
+    <EmbeddedResource Remove="wwwroot\shops\**" />
+    <None Remove="wwwroot\exports\**" />
+    <None Remove="wwwroot\shops111\**" />
+    <None Remove="wwwroot\shops\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.7" PrivateAssets="all" />
     <PackageReference Include="Syncfusion.Blazor.Core" Version="24.2.6" />
@@ -20,7 +35,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\exports\" />
+    <Content Update="wwwroot\Karandash_-_anat_shmotok_70669856.mp3">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

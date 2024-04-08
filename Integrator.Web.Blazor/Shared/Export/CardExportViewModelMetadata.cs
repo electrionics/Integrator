@@ -20,7 +20,7 @@ namespace Integrator.Web.Blazor.Shared.Export
             CellValue(x => x.Color, "IP_PROP002");
             CellValue(x => x.Material, "IP_PROP003");
             CellValue(x => x.Sizes, "IP_PROP004");
-                
+            
             #region Images
 
             CellValue(x => x.Image1, "IMG1");

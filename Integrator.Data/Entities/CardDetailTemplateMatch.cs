@@ -10,8 +10,8 @@
 
         public int? Order { get;set; }
 
-        public CardDetail? CardDetail { get; set; }
+        public CardDetail CardDetail { get; set; }
 
-        public Template? Template { get; set; }
+        public Template Template { get; set; }
     }
 }

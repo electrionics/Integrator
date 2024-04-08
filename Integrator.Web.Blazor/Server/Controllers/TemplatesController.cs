@@ -5,6 +5,7 @@ using Integrator.Data;
 using Integrator.Data.Entities;
 using Integrator.Web.Blazor.Shared;
 using FluentValidation;
+using System.Text.RegularExpressions;
 
 namespace Integrator.Web.Blazor.Server.Controllers
 {
@@ -131,12 +132,44 @@ namespace Integrator.Web.Blazor.Server.Controllers
                 throw new ArgumentNullException(nameof(template));
             }
 
+            var regexp = template.IsRegexp ? new Regex(template.SearchValue) : null;
+
             var result = new TemplateCheckViewModel
             {
-                Errors = new(),
-                CountAffected = 999,
-                CountResulted = 999
+                Errors = new()
             };
+
+            try
+            {
+                var affectQuery = dataContext.Set<Card>()
+                    .AsNoTracking()
+                    .Where(x => x.Detail != null && x.Translation != null)
+                    .Select(template.GetCardProperty);
+                var resultQuery = dataContext.Set<Card>()
+                    .AsNoTracking()
+                    .Where(x => x.Detail != null && x.Translation != null)
+                    .Where(x => x.Detail.TemplateMatches.All(y => y.Template.Order <= template.Order))
+                    .Select(template.GetCardProperty);// отличие от предыдущего показателя
+
+                if (regexp != null)
+                {
+                    result.CountAffected = (await affectQuery
+                        .ToListAsync())
+                        .Count(x => regexp.IsMatch(x));
+                    result.CountResulted = (await resultQuery
+                        .ToListAsync())
+                        .Count(x => regexp.IsMatch(x));
+                }
+                else
+                {
+                    result.CountAffected = await affectQuery.CountAsync(x => x.Contains(template.SearchValue));
+                    result.CountResulted = await resultQuery.CountAsync(x => x.Contains(template.SearchValue));
+                }
+            }
+            catch (Exception ex) 
+            {
+                _logger.LogError(ex, $"Не удалось посчитать количество карточек для шаблона с номером {template.Id}.");
+            }
 
             return await Task.FromResult(result);
         }
@@ -161,11 +194,12 @@ namespace Integrator.Web.Blazor.Server.Controllers
             return new List<KeyValuePair<int, string>>
             {
                 new((int)TemplateApplyField.Brand, "Бренд"),
+                new((int)TemplateApplyField.Category, "Категория"),
                 new((int)TemplateApplyField.Size, "Размер"),
-                new((int)TemplateApplyField.Color, "Цвет"),
                 new((int)TemplateApplyField.Price, "Цена"),
-                new((int)TemplateApplyField.Model, "Модель"),
-                new((int)TemplateApplyField.Material, "Материал"),
+                new((int)TemplateApplyField.Color, "Цвет"),
+                //new((int)TemplateApplyField.Model, "Модель"),
+                //new((int)TemplateApplyField.Material, "Материал"),
             };
         }
 
@@ -174,6 +208,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         {
             var result = await dataContext.Set<Template>().AsNoTracking()
                 .Include(x => x.CardDetailMatches)
+                .OrderBy(x => x.Order)
                 .Select(x => new TemplateItemViewModel
                 {
                     Id = x.Id,
