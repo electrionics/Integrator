@@ -147,17 +147,37 @@ namespace Integrator.Web.Blazor.Server.Controllers
                     .Select(template.GetCardProperty);
                 var resultQuery = dataContext.Set<Card>()
                     .AsNoTracking()
+                    .Include(x => x.Detail).ThenInclude(x => x.TemplateMatches).ThenInclude(x => x.Template)
                     .Where(x => x.Detail != null && x.Translation != null)
-                    .Where(x => x.Detail.TemplateMatches.All(y => y.Template.Order <= template.Order))
-                    .Select(template.GetCardProperty);// отличие от предыдущего показателя
+                    .Where(x => !x.Detail.TemplateMatches.Any(y => y.Template.ApplyField == template.ApplyField && y.TemplateId != template.Id) ||
+                                x.Detail.TemplateMatches
+                                    .Where(y => y.Template.ApplyField == template.ApplyField && y.TemplateId != template.Id)
+                                    .OrderBy(y => y.Template.Order)
+                                    .Last().Order < template.Order || 
+                                (
+                                    x.Detail.TemplateMatches
+                                        .Where(y => y.Template.ApplyField == template.ApplyField && y.TemplateId != template.Id)
+                                        .Max(y => y.Template.Order) == template.Order && 
+                                    (
+                                        template.Id == 0 ||
+                                        x.Detail.TemplateMatches
+                                            .Where(y => y.Template.ApplyField == template.ApplyField && y.TemplateId != template.Id)
+                                            .OrderBy(y => y.Template.Order)
+                                            .Last().TemplateId <= template.Id)
+                                    )
+                                )// отличие от предыдущего показателя
+                    .Select(template.GetCardProperty);
 
                 if (regexp != null)
                 {
-                    result.CountAffected = (await affectQuery
-                        .ToListAsync())
+                    var affectedItems = await affectQuery
+                        .ToListAsync();
+                    var resultedItems = await resultQuery
+                        .ToListAsync();
+
+                    result.CountAffected = affectedItems
                         .Count(x => regexp.IsMatch(x));
-                    result.CountResulted = (await resultQuery
-                        .ToListAsync())
+                    result.CountResulted = resultedItems
                         .Count(x => regexp.IsMatch(x));
                 }
                 else
@@ -171,7 +191,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
                 _logger.LogError(ex, $"Не удалось посчитать количество карточек для шаблона с номером {template.Id}.");
             }
 
-            return await Task.FromResult(result);
+            return result;
         }
 
         [HttpGet]

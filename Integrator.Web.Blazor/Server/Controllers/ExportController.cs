@@ -6,6 +6,7 @@ using Integrator.Data.Entities;
 using Integrator.Web.Blazor.Shared;
 using Integrator.Web.Blazor.Shared.Export;
 using Integrator.Shared.FluentImpex;
+using Integrator.Shared;
 
 
 namespace Integrator.Web.Blazor.Server.Controllers
@@ -32,7 +33,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
             }
         }
 
-        public ExportController(ILogger<ExportController> logger, IntegratorDataContext dataContext,  ApplicationConfig appConfig)
+        public ExportController(ILogger<ExportController> logger, IntegratorDataContext dataContext, ApplicationConfig appConfig)
         {
             _logger = logger;
             this.dataContext = dataContext;

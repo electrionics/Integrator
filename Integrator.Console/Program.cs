@@ -67,12 +67,21 @@ static void WriteUserChoose(string userValue, string procedureName)
 
 static async Task CallTest()
 {
+
+
+    //Console.WriteLine(null <= 1);
+    //Console.WriteLine(null >= 1);
+
+
+    //Console.ReadKey();
+    //return;
     var list = new List<(string, int?)>
     {
         new ("third", 1000),
         new ("second", 1),
         new ("first", null)
     };
+    Console.WriteLine(list.Max(x => x.Item2));
 
     var sorted = list.OrderBy(x => x.Item2);
     foreach (var item in sorted)
@@ -127,7 +136,7 @@ static async Task CallMarkCardsWithToponomyItems()
 
 static async Task CallLoadShop(string shopName)
 {
-    var logic = new ShopDirectoryLogic(GetDataContext(), GetLogger<ShopDirectoryLogic>());
+    var logic = new ShopDirectoryLogic(GetDataContext(), new() {  RootFolder = "" }, GetLogger<ShopDirectoryLogic>());
 
     await logic.SyncShopDirectory(shopName);
 
@@ -147,7 +156,7 @@ static async Task CallProcessDatabaseWithTemplates()
 
 static async Task CallTranslateDatabase()
 {
-    var logic = new TranslateLogic(GetDataContext(), GetLogger<TranslateLogic>());
+    var logic = new TranslateLogic(GetDataContext(), new() { GoogleCredentialsPath = "" }, GetLogger<TranslateLogic>());
 
     await logic.AddAllCardsNewTranslations();
 

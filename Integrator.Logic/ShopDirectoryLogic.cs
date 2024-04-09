@@ -13,11 +13,13 @@ namespace Integrator.Logic
     public class ShopDirectoryLogic
     {
         private readonly IntegratorDataContext dataContext;
+        private readonly ApplicationConfig config;
         private readonly ILogger<ShopDirectoryLogic> logger;
 
-        public ShopDirectoryLogic(IntegratorDataContext dataContext, ILogger<ShopDirectoryLogic> logger)
+        public ShopDirectoryLogic(IntegratorDataContext dataContext, ApplicationConfig config, ILogger<ShopDirectoryLogic> logger)
         {
             this.dataContext = dataContext;
+            this.config = config;
             this.logger = logger;
         }
 
@@ -29,7 +31,7 @@ namespace Integrator.Logic
         {
             try
             {
-                var shopRootPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "shops");
+                var shopRootPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, config.RootFolder, "shops");
                 var shopFolderDirectories = Directory.GetDirectories(shopRootPath);
                 var completeSuccess = true;
                 
@@ -162,7 +164,7 @@ namespace Integrator.Logic
 
             var cardsToAdd = new List<Card>();
             const int cardsBatchSize = 100;
-            foreach (DirectoryInfo cardDirectory in toponomyRootDirectory.GetDirectories("*", SearchOption.AllDirectories))
+            foreach (DirectoryInfo cardDirectory in toponomyRootDirectory.GetDirectories("*", SearchOption.TopDirectoryOnly))
             {
                 FileInfo? textFile;
                 try
@@ -309,9 +311,9 @@ namespace Integrator.Logic
             return directoryPath.Substring(index + 1);
         }
 
-        private static string GetShopDirectoryPath(string shopFolderName)
+        private string GetShopDirectoryPath(string shopFolderName)
         {
-            return Path.Join(AppDomain.CurrentDomain.BaseDirectory, "shops", shopFolderName);
+            return Path.Join(AppDomain.CurrentDomain.BaseDirectory, config.RootFolder, "shops", shopFolderName);
         }
 
         #endregion

@@ -11,18 +11,60 @@ using Grpc.Core;
 using Integrator.Data;
 using Integrator.Data.Entities;
 using Microsoft.Extensions.Logging;
+using Integrator.Shared;
 
 namespace Integrator.Logic
 {
     public class TranslateLogic
     {
+        #region Google Translate Client
+
+        private static TranslationServiceClient _client;
+        private static object _clientSync = new object();
+
+        private TranslationServiceClient Client
+        {
+            get
+            {
+                if (applicationConfig == null)
+                {
+                    throw new InvalidOperationException("Can't access client before set application config with settings for it.");
+                }
+
+                if (_client == null)
+                {
+                    lock (_clientSync)
+                    {
+                        var builder = new TranslationServiceClientBuilder
+                        {
+                            GrpcAdapter = RestGrpcAdapter.Default,
+                        };
+                        if (applicationConfig.GoogleCredentialsPath is not null)
+                        {
+                            builder.CredentialsPath = applicationConfig.GoogleCredentialsPath;
+                        }
+
+                        _client = builder.Build();
+                    }
+                }
+
+                return _client;
+            }
+        }
+
+        #endregion
+
+
         private readonly IntegratorDataContext dataContext;
         private readonly ILogger<TranslateLogic> logger;
+        private readonly ApplicationConfig applicationConfig;
+        
 
-        public TranslateLogic(IntegratorDataContext dataContext, ILogger<TranslateLogic> logger)
+        public TranslateLogic(IntegratorDataContext dataContext, ApplicationConfig applicationConfig, ILogger<TranslateLogic> logger)
         {
             this.logger = logger;
             this.dataContext = dataContext;
+            this.applicationConfig = applicationConfig;
         }
 
         public async Task AddAllCardsNewTranslations()
@@ -49,10 +91,6 @@ namespace Integrator.Logic
             var shop = await dataContext.Set<Shop>().FirstAsync(x => x.Name == shopName);
             var cards = await dataContext.Set<Card>().Where(x => x.ShopId == shop.Id && x.Translation == null).ToListAsync();
 
-            var client = new TranslationServiceClientBuilder
-            {
-                GrpcAdapter = RestGrpcAdapter.Default,
-            }.Build();
             //TranslationServiceClient client = TranslationServiceClient.Create();
 
             // переменная texts - хранилище неповторяющихся текстов карточек,
@@ -86,8 +124,8 @@ namespace Integrator.Logic
 
                     try
                     {
-                        var eng = await TranslateAsync(client, "en-US", card.FolderPath);
-                        var rus = await TranslateAsync(client, "ru-RU", card.FolderPath);
+                        var eng = await TranslateAsync(Client, "en-US", card.FolderPath);
+                        var rus = await TranslateAsync(Client, "ru-RU", card.FolderPath);
 
                         // пути переводим всегда, пренебрегаем экономией на них
                         cardTranslation.TitleEng = eng.path;
@@ -103,7 +141,7 @@ namespace Integrator.Logic
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError($"Unpredictable error while translating path: {ex.GetType()} message: {ex.Message}");
+                        logger.LogError(ex, $"Unpredictable error while translating path.");
                         await ClearTranslationsBatch(translationsBatch, sw);
                         return;
                     }
@@ -112,8 +150,8 @@ namespace Integrator.Logic
                 {
                     try
                     {
-                        var eng = await TranslateAsync(client, "en-US", card.FolderPath, card.TextFileContent);
-                        var rus = await TranslateAsync(client, "ru-RU", card.FolderPath, card.TextFileContent);
+                        var eng = await TranslateAsync(Client, "en-US", card.FolderPath, card.TextFileContent);
+                        var rus = await TranslateAsync(Client, "ru-RU", card.FolderPath, card.TextFileContent);
 
                         cardTranslation.TitleEng = eng.path;
                         cardTranslation.ContentEng = eng.text ?? string.Empty;
@@ -130,7 +168,7 @@ namespace Integrator.Logic
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError($"Unpredictable error while translating text and path: {ex.GetType()} message: {ex.Message}");
+                        logger.LogError(ex, $"Unpredictable error while translating text and path.");
                         await ClearTranslationsBatch(translationsBatch, sw);
                         return;
                     }

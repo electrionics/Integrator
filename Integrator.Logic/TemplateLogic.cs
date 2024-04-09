@@ -140,7 +140,7 @@ namespace Integrator.Logic
                     {
                         applyValue = match.Groups[1].Value;
                     }
-                    else
+                    else if (match.Success)
                     {
                         logger.LogWarning(
                                 $"Карточка {card.Id}. " +
