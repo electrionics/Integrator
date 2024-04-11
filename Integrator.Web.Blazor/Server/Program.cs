@@ -9,6 +9,7 @@ using Integrator.Web.Blazor.Server;
 using Integrator.Web.Blazor.Shared;
 using Integrator.Web.Blazor.Shared.Validators;
 using Integrator.Shared;
+using Microsoft.AspNetCore.Http.Timeouts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 var databaseConfig = builder.Configuration.GetSection("Database").Get<DatabaseConfig>();
 var applicationConfig = builder.Configuration.GetSection("Application").Get<ApplicationConfig>();
+
+builder.Services.AddRequestTimeouts((options) =>
+{
+    options.DefaultPolicy = new RequestTimeoutPolicy
+    {
+        Timeout = TimeSpan.FromSeconds(60)
+    };
+});
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
@@ -42,7 +51,10 @@ var logger = new LoggerConfiguration()
 builder.Logging.ClearProviders();
 builder.Logging.AddSerilog(logger);
 builder.Host.UseSerilog(logger);
-
+//builder.Services.AddResponseCompression((options) =>
+//{
+//    options.EnableForHttps = true;
+//}); // TODO: see below
 
 var app = builder.Build();
 
@@ -53,6 +65,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
+    //app.UseResponseCompression(); //TODO: try enable and test performance
     app.UseExceptionHandler("/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
@@ -64,6 +77,7 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 app.UseSerilogRequestLogging();
 app.UseRouting();
+app.UseRequestTimeouts();
 
 app.MapRazorPages();
 app.MapControllers();

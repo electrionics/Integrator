@@ -6,7 +6,7 @@
 @using Syncfusion.Blazor.Popups
 
 @inject HttpClient Http
-
+@inject IJSRuntime JS
 
 <PageTitle>Загруженные карточки товаров</PageTitle>
 
@@ -193,6 +193,16 @@ else
     protected override async Task OnInitializedAsync()
     {
         cards = await Http.GetFromJsonAsync<CardViewModel[]>("Cards/GetList");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("setNormalTimeout");
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private void ToggleExpanded()

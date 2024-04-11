@@ -5,7 +5,7 @@ namespace Integrator.Data
 {
     public class IntegratorDataContext:DbContext
     {
-        private readonly string _connectionString;
+        private readonly string? _connectionString;
 
         public IntegratorDataContext(DbContextOptions<IntegratorDataContext> options) : base(options)
         {
@@ -13,9 +13,10 @@ namespace Integrator.Data
 
         public IntegratorDataContext() : base()
         {
+            Database.SetCommandTimeout(60);
         }
 
-        public IntegratorDataContext(string connectionString)
+        public IntegratorDataContext(string connectionString) : this()
         {
             _connectionString = connectionString;
         }

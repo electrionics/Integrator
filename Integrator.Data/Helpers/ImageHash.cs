@@ -19,8 +19,6 @@ namespace Integrator.Data.Helpers
 
         public string GetHash(Bitmap bitmap)
         {
-            var formatter = new BinaryFormatter();
-
             using (var memoryStream = new MemoryStream())
             {
                 //var metafields = GetMetaFields(bitmap).ToArray();

@@ -75,6 +75,8 @@ namespace Integrator.Logic
                 }
             }
 
+            await dataContext.SaveChangesAsync();
+
             // создание необходимых новых категорий и брендов
             foreach (var referenceCreation in referencesCreationContext)
             {
@@ -92,7 +94,16 @@ namespace Integrator.Logic
                 }
             }
 
-            await dataContext.SaveChangesAsync();
+            try
+            {
+                await dataContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Не удалось добавить новые сущности для структурирования карточек.");
+            }
+            return;
+            // getValueFunc нужно тестировать, похоже что пока она не работает: возвращает нулевые Id новых сущностей
 
             sizes = await dataContext.Set<Size>()
                 .ToListAsync();
@@ -131,7 +142,7 @@ namespace Integrator.Logic
 
             if (template.IsRegexp)
             {
-                Regex templateRegex = new(template.SearchValue);
+                Regex templateRegex = new(template.SearchValue, RegexOptions.IgnoreCase);
                 var match = templateRegex.Match(template.GetCardText(card));
 
                 if (template.ApplyValue == null)
@@ -184,7 +195,7 @@ namespace Integrator.Logic
                             return (false, null, null);
                         }
                     case TemplateApplyField.Brand:
-                        var applyBrand = allBrands.FirstOrDefault(x => x.Name == template.ApplyValue);
+                        var applyBrand = allBrands.FirstOrDefault(x => x.Name.Equals(template.ApplyValue, StringComparison.InvariantCultureIgnoreCase));
 
                         if (applyBrand == null)
                         {
@@ -197,7 +208,7 @@ namespace Integrator.Logic
 
                         return (true, applyBrand.Id.ToString(), null);
                     case TemplateApplyField.Category:
-                        var applyCategory = allCategories.FirstOrDefault(x => x.Name == template.ApplyValue);
+                        var applyCategory = allCategories.FirstOrDefault(x => x.Name.Equals(template.ApplyValue, StringComparison.OrdinalIgnoreCase));
 
                         if (applyCategory == null)
                         {
@@ -215,7 +226,7 @@ namespace Integrator.Logic
                             .ToList(); // semicolon-seperated values must be here
 
                         var applySizes = allSizes
-                            .Where(x => templateSetSizeValues.Contains(x.Value))
+                            .Where(x => templateSetSizeValues.Contains(x.Value, StringComparer.OrdinalIgnoreCase))
                             .Select(x => new CardDetailSize
                             {
                                 SizeId = x.Id,
@@ -231,7 +242,7 @@ namespace Integrator.Logic
                         var valueSizes = string.Join(',', applySizes.Select(x => x.SizeId));
                         if (applySizes.Count != templateSetSizeValues.Count)
                         {
-                            var newSizes = templateSetSizeValues.Where(x => !allSizes.Select(y => y.Value).Contains(x));
+                            var newSizes = templateSetSizeValues.Where(x => !allSizes.Select(y => y.Value).Contains(x, StringComparer.OrdinalIgnoreCase));
                             var newValueSizes = string.Join(',', newSizes);
                             return (true, valueSizes, newValueSizes);
                         }
@@ -259,7 +270,7 @@ namespace Integrator.Logic
                     
                     if (!context.ContainsKey((template.ApplyField, newValue)))
                     {
-                        var newBrand = new Brand() { Name = newValue };
+                        var newBrand = new Brand() { Name = newValue, DisplayName = newValue };
                         context.Add((template.ApplyField, newValue), newBrand);
                     }
 
@@ -268,7 +279,7 @@ namespace Integrator.Logic
                 case TemplateApplyField.Category:
                     if (!context.ContainsKey((template.ApplyField, newValue)))
                     {
-                        var newCategory = new Category() { Name = newValue };
+                        var newCategory = new Category() { Name = newValue, DisplayName = newValue };
                         context.Add((template.ApplyField, newValue), newCategory);
                     }
 
@@ -329,7 +340,7 @@ namespace Integrator.Logic
                             && newCategoryId != card.Detail.CategoryId,
                                 $"Карточка {card.Id}. " +
                                 $"Шаблон {template.Id}. " +
-                                $"Бренд '{card.Detail.CategoryId}:{card.Detail.Category?.Name ?? string.Empty}' перезаписан новым значением '{newCategoryId}:{template.ApplyValue}'");
+                                $"Категория '{card.Detail.CategoryId}:{card.Detail.Category?.Name ?? string.Empty}' перезаписана новым значением '{newCategoryId}:{template.ApplyValue}'");
 
                         card.Detail.CategoryId = newCategoryId;
                         break;
@@ -358,30 +369,39 @@ namespace Integrator.Logic
                         card.Detail.Material = matchingValue;
                         break;
                     case TemplateApplyField.Size:
-                        var newSizeIds = matchingValue
-                            .Split(',')
-                            .Select(int.Parse)
-                            .ToList();
-                        var newSizes = newSizeIds.Select(x => new CardDetailSize
+                        try
                         {
-                            SizeId = x,
-                            CardId = card.Id
-                        });
+                            var newSizeIds = matchingValue
+                                .Split(',')
+                                .Select(int.Parse)
+                                .ToList();
+                            var newSizes = newSizeIds.Select(x => new CardDetailSize
+                            {
+                                SizeId = x,
+                                CardId = card.Id
+                            });
 
-                        var beforeCount = card.Detail.Sizes.Count;
-                        var newCount = newSizeIds.Count;
+                            var beforeCount = card.Detail.Sizes.Count;
+                            var newCount = newSizeIds.Count;
 
-                        card.Detail.Sizes = card.Detail.Sizes
-                            .UnionBy(newSizes, x => x.SizeId)
-                            .ToList();
+                            card.Detail.Sizes = card.Detail.Sizes
+                                .UnionBy(newSizes, x => x.SizeId)
+                                .ToList();
 
-                        var afterCount = card.Detail.Sizes.Count;
+                            var afterCount = card.Detail.Sizes.Count;
 
-                        logger.LogWarningIf(beforeCount + newCount != afterCount,
-                                $"Карточка {card.Id}. " +
-                                $"Шаблон {template.Id}. " +
-                                $"Размеры пересекаются! Количество размеров до изменения: {beforeCount}, новых: {newCount}, после изменения: {afterCount}");
-
+                            logger.LogWarningIf(beforeCount + newCount != afterCount,
+                                    $"Карточка {card.Id}. " +
+                                    $"Шаблон {template.Id}. " +
+                                    $"Размеры пересекаются! Количество размеров до изменения: {beforeCount}, новых: {newCount}, после изменения: {afterCount}");
+                        }
+                        catch(Exception ex)
+                        {
+                            logger.LogError(ex, 
+                                    $"Карточка {card.Id}. " +
+                                    $"Шаблон {template.Id}. " +
+                                    $"Ошибка при установке размеров. Значение для установки: {matchingValue}.");
+                        }
                         break;
                     default:
                         break;

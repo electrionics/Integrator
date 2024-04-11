@@ -141,14 +141,14 @@ else
     private SfGrid<TemplateItemViewModel> DataGrid;
     private TemplateEditView TemplateEditView;
 
-    IEnumerable<KeyValuePair<int, string>>? searchFields;
-    IEnumerable<KeyValuePair<int, string>>? applyFields;
+    IEnumerable<IntStringKeyValuePair>? searchFields;
+    IEnumerable<IntStringKeyValuePair>? applyFields;
     private TemplateItemViewModel[]? templates;
 
     protected override async Task OnInitializedAsync()
     {
-        searchFields = await Http.GetFromJsonAsync<IEnumerable<KeyValuePair<int, string>>>("Templates/GetAvailableSearchFields");
-        applyFields = await Http.GetFromJsonAsync<IEnumerable<KeyValuePair<int, string>>>("Templates/GetAvailableApplyFields");
+        searchFields = await Http.GetFromJsonAsync<IEnumerable<IntStringKeyValuePair>>("Templates/GetAvailableSearchFields");
+        applyFields = await Http.GetFromJsonAsync<IEnumerable<IntStringKeyValuePair>>("Templates/GetAvailableApplyFields");
 
         templates = await Http.GetFromJsonAsync<TemplateItemViewModel[]>("Templates/GetList");
     }

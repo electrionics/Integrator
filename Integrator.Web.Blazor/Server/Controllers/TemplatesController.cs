@@ -132,7 +132,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
                 throw new ArgumentNullException(nameof(template));
             }
 
-            var regexp = template.IsRegexp ? new Regex(template.SearchValue) : null;
+            var regexp = template.IsRegexp ? new Regex(template.SearchValue, RegexOptions.IgnoreCase) : null;
 
             var result = new TemplateCheckViewModel
             {
@@ -197,22 +197,22 @@ namespace Integrator.Web.Blazor.Server.Controllers
         [HttpGet]
         public IEnumerable<KeyValuePair<int, string>> GetAvailableSearchFields()
         {
-            return new List<KeyValuePair<int, string>>()
-            {
+            return
+            [
                 new ((int)TemplateSearchField.SourcePath, "Путь"),
                 new ((int)TemplateSearchField.RusText, "Текст (рус.)"),
                 new ((int)TemplateSearchField.EngText, "Текст (англ.)"),
                 new ((int)TemplateSearchField.SourceText, "Текст"),
                 new ((int)TemplateSearchField.EngPath, "Путь (англ.)"),
                 new ((int)TemplateSearchField.RusPath, "Путь (рус.)"),
-            };
+            ];
         }
 
         [HttpGet]
         public IEnumerable<KeyValuePair<int, string>> GetAvailableApplyFields()
         {
-            return new List<KeyValuePair<int, string>>
-            {
+            return
+            [
                 new((int)TemplateApplyField.Brand, "Бренд"),
                 new((int)TemplateApplyField.Category, "Категория"),
                 new((int)TemplateApplyField.Size, "Размер"),
@@ -220,7 +220,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
                 new((int)TemplateApplyField.Color, "Цвет"),
                 //new((int)TemplateApplyField.Model, "Модель"),
                 //new((int)TemplateApplyField.Material, "Материал"),
-            };
+            ];
         }
 
         [HttpGet]
