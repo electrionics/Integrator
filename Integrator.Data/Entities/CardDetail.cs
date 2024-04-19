@@ -39,9 +39,9 @@
 
         public Card Card { get; set; }
 
-        public Brand Brand { get; set; }
+        public Brand? Brand { get; set; }
 
-        public Category Category { get; set; }
+        public Category? Category { get; set; }
 
 
         public List<CardDetailTemplateMatch> TemplateMatches { get; set; }

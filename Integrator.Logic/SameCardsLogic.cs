@@ -1,6 +1,6 @@
 ﻿using Integrator.Data;
 using Integrator.Data.Entities;
-
+using Integrator.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -14,11 +14,13 @@ namespace Integrator.Logic
     {
         private readonly ILogger<SameCardsLogic> logger;
         private readonly IntegratorDataContext dataContext;
+        private readonly ApplicationConfig config;
 
-        public SameCardsLogic(ILogger<SameCardsLogic> logger, IntegratorDataContext dataContext)
+        public SameCardsLogic(ILogger<SameCardsLogic> logger, IntegratorDataContext dataContext, ApplicationConfig config)
         {
             this.logger = logger;
             this.dataContext = dataContext;
+            this.config = config;
         }
 
         public async Task MarkSameCards()
@@ -172,7 +174,7 @@ namespace Integrator.Logic
                 }
 
 #pragma warning disable CA1416 // Validate platform compatibility
-                using var img1 = new Bitmap(System.Drawing.Image.FromFile(GetFullPath(baseImage)));
+                using var img1 = new Bitmap(Image.FromFile(GetFullPath(baseImage)));
 
                 foreach (var testImage in imagesToCheck)
                 {
@@ -183,7 +185,7 @@ namespace Integrator.Logic
                     }
                     else
                     {
-                        using var img2 = new Bitmap(System.Drawing.Image.FromFile(GetFullPath(testImage)));
+                        using var img2 = new Bitmap(Image.FromFile(GetFullPath(testImage)));
                         testImageEqual = CompareImages(img1, img2);
                     }
 
@@ -255,9 +257,9 @@ namespace Integrator.Logic
 
         #region Helper Methods
 
-        private static string GetFullPath(CardImage image)
+        private string GetFullPath(CardImage image)
         {
-            return Path.Join(AppDomain.CurrentDomain.BaseDirectory, "shops", image.Card.Shop.Name, image.FolderPath, image.ImageFileName);
+            return Path.Join(AppDomain.CurrentDomain.BaseDirectory, config.RootFolder, "shops", image.Card.Shop.Name, image.FolderPath, image.ImageFileName);
         }
 
         private async Task<bool> ClearSimilaritiesBatch(List<CardSimilar> batch, Stopwatch sw)

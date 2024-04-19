@@ -7,6 +7,7 @@ using Integrator.Web.Blazor.Shared;
 using Integrator.Web.Blazor.Shared.Export;
 using Integrator.Shared.FluentImpex;
 using Integrator.Shared;
+using RussianTransliteration;
 
 
 namespace Integrator.Web.Blazor.Server.Controllers
@@ -53,6 +54,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
                     .Include(x => x.Images)
                     .Include(x => x.Shop)
                     .Include(x => x.Similarities)
+                    .Where(x => x.Detail != null && x.Images.Any())
                     .ToDictionaryAsync(x => x.Id);
                 #endregion
 
@@ -69,18 +71,22 @@ namespace Integrator.Web.Blazor.Server.Controllers
                             .Select(x => x.SimilarCardId)
                             .Distinct()
                             .Select(x => cards[x])
-                            .OrderByDescending(x=> x.Detail.Rating)
+                            .OrderByDescending(x => x.Detail.Rating)
                             .ToList();
 
                         foreach(var similarCard in similarCards)
                         {
                             card.Detail.Brand ??= similarCard.Detail.Brand;
+                            
                             card.Detail.Category ??= similarCard.Detail.Category;
+                            if (string.Equals(card.Detail.Category?.Name, "Обувь", StringComparison.InvariantCultureIgnoreCase) && 
+                                similarCard.Detail.Category != null)
+                            {
+                                card.Detail.Category = similarCard.Detail.Category; //TODO: make low priority merge category with name "Обувь"
+                            }
 
-                            card.Detail.Model ??= similarCard.Detail.Model;
-                            card.Detail.Color ??= similarCard.Detail.Color;
-                            card.Detail.Price ??= similarCard.Detail.Price;
-                            card.Detail.Material ??= similarCard.Detail.Material;
+                            card.Detail.Color = ReplaceNullWithNew(card.Detail.Color, similarCard.Detail.Color);
+                            card.Detail.Price = GetNewPrice(card.Detail.Price, similarCard.Detail.Price);
 
                             card.Detail.Sizes = card.Detail.Sizes.Any()
                                 ? card.Detail.Sizes
@@ -92,35 +98,44 @@ namespace Integrator.Web.Blazor.Server.Controllers
                 }
                 #endregion
 
+                var now = DateTime.Now.Date;
+
                 #region Создание списка карточек для экспорта
                 var cardsToExport = cards
                     .Where(x => !cardIdsToExclude.Contains(x.Key))
-                    .Select(x => new CardExportViewModel
+                    .Select(x => 
                     {
-                        CardExportId = x.Value.Id,
-                        Active= true,
-                        PreviewText = x.Value.Detail.ContentRus,
+                        var item = new CardExportViewModel
+                        {
+                            CardExportId = x.Value.Id,
+                            Active = true,
+                            ActiveFrom = now,
+                            Price = x.Value.Detail.Price,
+                            Brand = x.Value.Detail.Brand?.Name,
+                            BrandCode = x.Value.Detail.Brand?.Id,
 
-                        Brand = x.Value.Detail.Brand?.Name,
-                        MainCategory = null,
-                        SubCategory = x.Value.Detail.Category?.Name,
+                            Code = GetCode(x.Value.Shop, x.Value.Detail),
 
-                        Model = x.Value.Detail.Model,
-                        Price = x.Value.Detail.Price,
-                        Color = x.Value.Detail.Color,
-                        Material = x.Value.Detail.Material,
+                            SubCategory = x.Value.Detail.Category?.Name,
+                            Color = x.Value.Detail.Color,
 
-                        Sizes = string.Join(',', x.Value.Detail.Sizes.Select(y => y.Size.Value)),
+                            Sizes = GetSizes(x.Value.Detail.Sizes),
 
-                        Image1 = GetImageFullUrl(x.Value, 0),
-                        Image2 = GetImageFullUrl(x.Value, 1),
-                        Image3 = GetImageFullUrl(x.Value, 2),
-                        Image4 = GetImageFullUrl(x.Value, 3),
-                        Image5 = GetImageFullUrl(x.Value, 4),
-                        Image6 = GetImageFullUrl(x.Value, 5),
-                        Image7 = GetImageFullUrl(x.Value, 6),
-                        Image8 = GetImageFullUrl(x.Value, 7),
-                        Image9 = GetImageFullUrl(x.Value, 8),
+                            Image1 = GetImageFullUrl(x.Value, 0),
+                            Image2 = GetImageFullUrl(x.Value, 1),
+                            Image3 = GetImageFullUrl(x.Value, 2),
+                            Image4 = GetImageFullUrl(x.Value, 3),
+                            Image5 = GetImageFullUrl(x.Value, 4),
+                            Image6 = GetImageFullUrl(x.Value, 5),
+                            Image7 = GetImageFullUrl(x.Value, 6),
+                            Image8 = GetImageFullUrl(x.Value, 7),
+                            Image9 = GetImageFullUrl(x.Value, 8),
+                        };
+
+                        item.Model = GetModelName(x.Value.Detail.Category, x.Value.Detail.Brand, item.Code);
+                        item.Url = Transliterate(item.Model).Replace(" ", "_");
+
+                        return item;
                     })
                     .ToList();
                 #endregion
@@ -160,6 +175,69 @@ namespace Integrator.Web.Blazor.Server.Controllers
             }
         }
 
+        #region Слияние одинаковых товаров
+
+        private static decimal? GetNewPrice(decimal? sourceCardPrice, decimal? similarCardPrice)
+        {
+            if (sourceCardPrice == null)
+            {
+                return similarCardPrice;
+            }
+
+            if (similarCardPrice == null)
+            {
+                return sourceCardPrice;
+            }
+
+            return Math.Min(sourceCardPrice.Value, similarCardPrice.Value);
+        }
+
+        private static string? ReplaceNullWithNew(string? oldValue, string? newValue)
+        {
+            return oldValue ?? newValue;
+        }
+
+        #endregion
+
+        #region Получение данных для экспорта
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="category"></param>
+        /// <param name="brand"></param>
+        /// <param name="code">Артикул</param>
+        /// <returns></returns>
+        private static string GetModelName(Category? category, Brand? brand, string code)
+        {
+            var name = category == null 
+                ? string.Empty
+                : category.DisplayName + " ";
+
+            name += brand == null 
+                ? string.Empty
+                : brand.DisplayName + " ";
+
+            name += code;
+
+            return name;
+        }
+
+        private static string GetCode(Shop shop, CardDetail cardDetail)
+        {
+            return $"IN-{cardDetail.CardId:00000}-{shop.Id:000}";
+        }
+
+        private static string Transliterate(string value)
+        {
+            return RussianTransliterator.GetTransliteration(value);
+        }
+
+        private static string GetSizes(List<CardDetailSize> sizes)
+        {
+            return string.Join(',', sizes.Select(y => y.Size.Value));
+        }
+
         private string? GetImageFullUrl(Card card, int index)
         {
             var images = card.Images;
@@ -172,5 +250,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
 
             return $"{HostBaseUrl}/{imageRelativeUrl}";
         }
+
+        #endregion
     }
 }
