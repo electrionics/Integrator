@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,7 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="31.0.4" />
     <PackageReference Include="Google.Cloud.Translate.V3" Version="3.6.0" />
+    <PackageReference Include="RussianTransliterator" Version="1.0.1.1" />
   </ItemGroup>
 
   <ItemGroup>

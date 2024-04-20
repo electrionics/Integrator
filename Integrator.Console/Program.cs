@@ -1,10 +1,13 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using CsvHelper;
 using Integrator.Data;
 using Integrator.Data.Helpers;
 using Integrator.Logic;
+using Integrator.Logic.Export;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using System.Globalization;
 
 // Магазины:
 //  'hanguang'
@@ -67,7 +70,17 @@ static void WriteUserChoose(string userValue, string procedureName)
 
 static async Task CallTest()
 {
-
+    using var streamWriter = new StreamWriter("C:\\temp\\testfile.csv");
+    using var csvWriter = new CsvWriter(streamWriter, culture: CultureInfo.InvariantCulture);
+    {
+        csvWriter.WriteHeader(typeof(CardExportViewModel));
+        await csvWriter.WriteRecordsAsync(new List<CardExportViewModel>
+        {
+            new(){ CardExportId = 1 },
+            new(){ CardExportId = 2 },
+            new(){ CardExportId = 3 },
+        });
+    }
 
     //Console.WriteLine(null <= 1);
     //Console.WriteLine(null >= 1);

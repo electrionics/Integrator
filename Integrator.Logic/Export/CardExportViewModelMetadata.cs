@@ -1,8 +1,7 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-using FluentImpex.Converters.Common.Base;
+﻿using FluentImpex.Converters.Common.Base;
 using Integrator.Shared.FluentImpex;
 
-namespace Integrator.Web.Blazor.Shared.Export
+namespace Integrator.Logic.Export
 {
     public class CardExportViewModelMetadata : BaseMetadata<CardExportViewModel>
     {
@@ -10,7 +9,7 @@ namespace Integrator.Web.Blazor.Shared.Export
         {
             CellValue(x => x.CardExportId, "IE_XML_ID");
             CellValue(x => x.Model, "IE_NAME");
-            CellValue(x => x.BitrixId, "IE_ID");
+            CellValue(x => x.ExternalId, "IE_ID");
 
             CellValue(x => x.Active, "IE_ACTIVE");
             CellValue(x => x.ActiveFrom, "IE_ACTIVE_FROM");

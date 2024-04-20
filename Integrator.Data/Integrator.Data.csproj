@@ -12,4 +12,8 @@
     <PackageReference Include="System.Drawing.Common" Version="8.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Integrator.Shared\Integrator.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

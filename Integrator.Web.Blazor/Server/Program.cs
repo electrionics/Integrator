@@ -43,6 +43,7 @@ builder.Services.AddScoped<TranslateLogic>();
 builder.Services.AddScoped<TemplateLogic>();
 builder.Services.AddScoped<ReplacementLogic>();
 builder.Services.AddScoped<SameCardsLogic>();
+builder.Services.AddScoped<ExportLogic>();
 
 var logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
