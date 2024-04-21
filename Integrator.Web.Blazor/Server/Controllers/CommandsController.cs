@@ -1,4 +1,5 @@
 ﻿using Integrator.Logic;
+using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Integrator.Web.Blazor.Server.Controllers
@@ -27,6 +28,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         #region Sync Shop Directories
 
         [HttpPost]
+        [DisableRequestTimeout]
         public async Task SyncShopDirectories()
         {
             await shopDirectoryLogic.SyncShopsRoot();
@@ -37,6 +39,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         #region Translate Card Texts
 
         [HttpPost]
+        [DisableRequestTimeout]
         public async Task TranslateTexts()
         {
             await translateLogic.AddAllCardsNewTranslations();
@@ -47,6 +50,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         #region Recalculate Card Detail Properties (brand, category, size, color, material, model)
 
         [HttpPost]
+        [DisableRequestTimeout]
         public async Task RecalculateCards()
         {
             await templateLogic.ProcessCardsWithTemplates();
@@ -72,6 +76,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         #region Mark Same Cards
 
         [HttpPost]
+        [DisableRequestTimeout]
         public async Task MarkSameCards()
         {
             await sameCardsLogic.MarkSameCards();
@@ -82,6 +87,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         #region Recalculate Card Detail Texts (rus text)
 
         [HttpPost]
+        [DisableRequestTimeout]
         public async Task RecalculateTexts()
         {
             await replacementLogic.ProcessCardsWithReplacements();

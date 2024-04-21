@@ -2,6 +2,7 @@
 using Integrator.Web.Blazor.Shared;
 using Integrator.Logic;
 using Integrator.Logic.Export;
+using Microsoft.AspNetCore.Http.Timeouts;
 
 
 namespace Integrator.Web.Blazor.Server.Controllers
@@ -36,6 +37,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         }
 
         [HttpGet]
+        [DisableRequestTimeout]
         public async Task<ExportFileViewModel?> GenerateExportFile()
         {
             var url = await _exportLogic.GenerateExportFile(HostBaseUrl, ExportFileType.Csv);

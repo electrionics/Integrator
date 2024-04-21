@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Integrator.Data;
 using Integrator.Data.Entities;
 using Integrator.Web.Blazor.Shared;
+using Microsoft.AspNetCore.Http.Timeouts;
 
 
 namespace Integrator.Web.Blazor.Server.Controllers
@@ -22,6 +23,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         }
 
         [HttpGet]
+        [DisableRequestTimeout]
         public async Task<CardViewModel[]> GetList()
         {
             try
