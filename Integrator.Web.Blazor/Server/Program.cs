@@ -24,6 +24,8 @@ builder.Services.AddRequestTimeouts((options) =>
     {
         Timeout = TimeSpan.FromSeconds(60)
     };
+
+    options.AddPolicy(ServerConstants.LongRunningPolicyName, TimeSpan.FromMinutes(60));
 });
 
 builder.Services.AddControllersWithViews();

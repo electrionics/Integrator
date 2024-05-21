@@ -421,20 +421,22 @@ namespace Integrator.Logic
 
             if (card.Detail == null)
             {
-                card.Detail = new() { TemplateMatches = new() };
+                card.Detail = new() { TemplateMatches = [] };
             }
 
-            if (!card.Detail.TemplateMatches.Any(x =>
-                x.TemplateId == matching.TemplateId))
+            SetTemplateMatchingValue(card, template, matching.Value);
+            var existingMatch = card.Detail.TemplateMatches.FirstOrDefault(x =>
+                x.TemplateId == matching.TemplateId);
+
+            if (existingMatch == null)
             {
-                SetTemplateMatchingValue(card, template, matching.Value);
                 dataContext.Set<CardDetailTemplateMatch>().Add(matching);
                 return matching;
             }
             else
             {
-                logger.LogInformation("Matching already processed.");
-                return null;
+                existingMatch.Value = value;
+                return existingMatch;
             }
         }
 

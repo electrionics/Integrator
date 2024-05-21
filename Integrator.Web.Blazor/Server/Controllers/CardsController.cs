@@ -23,7 +23,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         }
 
         [HttpGet]
-        [DisableRequestTimeout]
+        [RequestTimeout(ServerConstants.LongRunningPolicyName)]
         public async Task<CardViewModel[]> GetList()
         {
             try

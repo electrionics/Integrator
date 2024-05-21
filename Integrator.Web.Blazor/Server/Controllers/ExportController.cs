@@ -37,7 +37,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         }
 
         [HttpGet]
-        [DisableRequestTimeout]
+        [RequestTimeout(ServerConstants.LongRunningPolicyName)]
         public async Task<ExportFileViewModel?> GenerateExportFile()
         {
             var url = await _exportLogic.GenerateExportFile(HostBaseUrl, ExportFileType.Csv);
