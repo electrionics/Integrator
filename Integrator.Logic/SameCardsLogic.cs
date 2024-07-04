@@ -1,12 +1,13 @@
-﻿using Integrator.Data;
-using Integrator.Data.Entities;
-using Integrator.Shared;
+﻿using System.Diagnostics;
+using System.Drawing;
+using System.Security.Cryptography;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-using System.Diagnostics;
-using System.Drawing;
-using System.Security.Cryptography;
+using Integrator.Data;
+using Integrator.Data.Entities;
+using Integrator.Shared;
 
 namespace Integrator.Logic
 {

@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+
 using Integrator.Data.Entities;
 using Integrator.Web.Blazor.Shared.Common;
 

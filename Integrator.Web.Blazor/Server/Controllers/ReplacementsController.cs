@@ -1,11 +1,11 @@
-﻿using FluentValidation;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+using FluentValidation;
 
 using Integrator.Data;
 using Integrator.Data.Entities;
 using Integrator.Web.Blazor.Shared;
-
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Integrator.Web.Blazor.Server.Controllers
 {

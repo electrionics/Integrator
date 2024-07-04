@@ -1,8 +1,9 @@
-﻿using Integrator.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+using Integrator.Data;
 using Integrator.Data.Entities;
 using Integrator.Data.Helpers;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Integrator.Logic
 {

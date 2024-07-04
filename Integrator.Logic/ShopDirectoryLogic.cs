@@ -1,12 +1,12 @@
 ﻿using System.Text;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 using Integrator.Data.Entities;
 using Integrator.Data.Helpers;
 using Integrator.Data;
-using Microsoft.Extensions.Logging;
 using Integrator.Shared;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace Integrator.Logic
 {

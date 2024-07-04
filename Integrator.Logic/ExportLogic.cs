@@ -1,14 +1,18 @@
-﻿using CsvHelper;
+﻿using System.Net.Http.Json;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+using CsvHelper;
 using CsvHelper.Configuration;
+
+using RussianTransliteration;
+
 using Integrator.Data;
 using Integrator.Data.Entities;
 using Integrator.Logic.Export;
 using Integrator.Shared;
 using Integrator.Shared.FluentImpex;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using RussianTransliteration;
-using System.Globalization;
 
 namespace Integrator.Logic
 {
@@ -24,6 +28,100 @@ namespace Integrator.Logic
             this.appConfig = appConfig;
             _logger = logger;
         }
+
+        #region Получение списка экспортируемых файлов
+
+        public async Task<List<ExportItem>> GetExports()
+        {
+            var result = await dataContext.Set<ExportItem>().AsNoTracking()
+                .OrderByDescending(x => x.Created)
+                .ToListAsync();
+
+            return result;
+        }
+
+        #endregion
+
+        #region Переключение текущего экспортируемого файла
+
+        public async Task<bool> PerformSelection(string externalId)
+        {
+            try
+            {
+                using var transaction = TransactionFactory.CreateConfiguredWithDefaults();
+
+                var toUpdateItems = await dataContext.Set<ExportItem>()
+                    .Where(x => x.IsSelected || x.ExternalFileId == externalId)
+                    .ToListAsync();
+
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+                ExportItem lastDeselected = null, selected = null;
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+                foreach (var item in toUpdateItems)
+                {
+                    if (item.IsSelected)
+                    {
+                        item.IsSelected = false;
+                        lastDeselected = item;
+                    }
+
+                    if (item.ExternalFileId == externalId)
+                    {
+                        item.IsSelected = true;
+                        selected = item;
+                    }
+                }
+
+                if (selected != null || lastDeselected == null)
+                {
+                    await dataContext.SaveChangesAsync();
+
+                    transaction.Complete();
+                }
+                else
+                {
+                    transaction.Dispose();
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"ошибка при выборе экспорт файла как текущего. Часть имени файла '{externalId}'");
+
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region Отправка команды получателю файла экспорта
+
+        public async Task<bool> SendCommandToRecipient(string externalFileId)
+        {
+            if (!appConfig.BitrixEnabled)
+                return false;
+            
+            using var httpClient = new HttpClient();
+            httpClient.BaseAddress = new Uri(appConfig.BitrixDomain!);
+            try
+            {
+                await httpClient.PostAsync(
+                    appConfig.BitrixRelativeSignalUrl,
+                    JsonContent.Create<(string action, string filename)>(("forceImport", externalFileId)));
+
+                return true;
+            }
+            catch(Exception e)
+            {
+                _logger.LogError(e, "Ошибка при отправке задачи Битриксу на принудительный импорт файла.");
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region Создавние нового файла экспорта
 
         public async Task<string> GenerateExportFile(string hostBaseUrl, ExportFileType fileType)
         {
@@ -132,6 +230,8 @@ namespace Integrator.Logic
 
                 _logger.LogInformation("Экспорт: модели для формирования строк получены.");
 
+                using var exportFileCreateTransaction = TransactionFactory.CreateConfiguredWithDefaults();
+
                 #region Создание файла с данными экспорта
                 string extension = fileType switch
                 {
@@ -140,7 +240,10 @@ namespace Integrator.Logic
                     _ => throw new NotImplementedException("Тип файла экспорта не реализован."),
                 };
 
-                var fileName = "export_cards--" + DateTime.Now.ToString("yyyy_MM_dd-hh_mm_ss") + "--" + Guid.NewGuid().ToString().Substring(0, 4) + extension;
+                var createdTime = DateTime.Now;
+                var guidPart = Guid.NewGuid().ToString().Substring(0, 4);
+                var fileName = "export_cards--" + createdTime.ToString("yyyy_MM_dd-hh_mm_ss") + "--" + guidPart + extension;
+                
                 var filePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, appConfig.RootFolder, "exports", fileName);
 
                 switch (fileType)
@@ -179,8 +282,30 @@ namespace Integrator.Logic
                     default: 
                         throw new NotImplementedException("Тип файла экспорта не реализован.");
                 }
-                
+
                 #endregion
+
+                #region Добавление и выбор файла как текущего
+
+                var newDbItem = new ExportItem
+                {
+                    FileName = fileName,
+                    ExternalFileId = guidPart,
+                    IsSelected = false,
+                    Created = createdTime,
+                    ExcludedAsRepeatableCount = 0,
+                    NoBrandAndCategoryCount = 0,
+                    NonPriced = 0
+                };
+                dataContext.Set<ExportItem>().Add(newDbItem);
+
+                await dataContext.SaveChangesAsync();
+
+                await PerformSelection(newDbItem.ExternalFileId);
+
+                #endregion
+
+                exportFileCreateTransaction.Complete();
 
                 _logger.LogInformation($"Экспорт: файл '{fileName}' сгенерирован успешно.");
 
@@ -193,6 +318,11 @@ namespace Integrator.Logic
                 return null;
             }
         }
+
+        #endregion
+
+
+        #region Вспомогательные методы
 
         #region Слияние одинаковых товаров
 
@@ -269,6 +399,8 @@ namespace Integrator.Logic
 
             return $"{hostBaseUrl}/{imageRelativeUrl}";
         }
+
+        #endregion
 
         #endregion
     }

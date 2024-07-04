@@ -1,5 +1,6 @@
-﻿using Newtonsoft.Json;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
+
+using Newtonsoft.Json;
 
 namespace Integrator.Web.Blazor.Shared.Common
 {

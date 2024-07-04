@@ -1,13 +1,16 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System.Globalization;
+
+using Microsoft.Extensions.Logging;
+
 using CsvHelper;
+using Serilog;
+
 using Integrator.Data;
 using Integrator.Data.Helpers;
 using Integrator.Logic;
 using Integrator.Logic.Export;
-using Microsoft.Extensions.Logging;
-using Serilog;
-using System.Globalization;
 
 // Магазины:
 //  'hanguang'

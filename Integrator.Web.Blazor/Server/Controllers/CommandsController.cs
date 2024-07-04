@@ -1,6 +1,7 @@
-﻿using Integrator.Logic;
-using Microsoft.AspNetCore.Http.Timeouts;
+﻿using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.Mvc;
+
+using Integrator.Logic;
 
 namespace Integrator.Web.Blazor.Server.Controllers
 {

@@ -177,6 +177,11 @@ namespace Integrator.Data
                 entity.HasKey(x => x.Id);
             });
 
+            modelBuilder.Entity<ExportItem>(entity =>
+            {
+                entity.HasKey(x => x.ExternalFileId);
+            });
+
             //modelBuilder.Entity<ThoughtCognitiveError>(entity =>
             //{
             //    entity.HasKey(x => new { x.ThoughtId, x.CognitiveErrorId });

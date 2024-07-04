@@ -1,15 +1,15 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http.Timeouts;
+
 using FluentValidation;
 using Serilog;
 
 using Integrator.Data;
 using Integrator.Logic;
-
+using Integrator.Shared;
 using Integrator.Web.Blazor.Server;
 using Integrator.Web.Blazor.Shared;
 using Integrator.Web.Blazor.Shared.Validators;
-using Integrator.Shared;
-using Microsoft.AspNetCore.Http.Timeouts;
 
 var builder = WebApplication.CreateBuilder(args);
 

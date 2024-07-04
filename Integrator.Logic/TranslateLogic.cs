@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -10,7 +11,6 @@ using Grpc.Core;
 
 using Integrator.Data;
 using Integrator.Data.Entities;
-using Microsoft.Extensions.Logging;
 using Integrator.Shared;
 
 namespace Integrator.Logic

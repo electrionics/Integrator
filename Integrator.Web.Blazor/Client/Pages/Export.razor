@@ -1,7 +1,9 @@
 ﻿@page "/export"
 
 @using Integrator.Web.Blazor.Shared
+@using Integrator.Web.Blazor.Shared.Common
 @using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Grids
 @using Syncfusion.Blazor.SplitButtons
 @using Syncfusion.Blazor.Popups
 
@@ -10,7 +12,7 @@
 
 <h3>Экспорт товаров</h3>
 
-<SfProgressButton @ref="ExportBtn" OnClick="ExportBtnClick" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-spreadsheet" Content="Экспортировать товары">
+<SfProgressButton @ref="ExportBtn" OnClick="ExportBtnClick" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-spreadsheet" Content="Сгенерировать новый">
     <ProgressButtonSpinSettings Position="SpinPosition.Right" />
 </SfProgressButton>
 
@@ -22,12 +24,94 @@
     }
 }
 
+<SfGrid ID="Grid"
+            @ref="DataGrid"
+            AllowFiltering="true"
+            AllowSorting="true"
+            AllowPaging="true"
+            AllowGrouping="true"
+            AllowTextWrap="true"
+            DataSource="@exports"
+            TValue="ExportItemViewModel">
+        <GridPageSettings PageSize="50"></GridPageSettings>
+        <GridFilterSettings Type="FilterType.Excel"></GridFilterSettings>
+        <GridColumns>
+            <GridColumn Field="@nameof(ExportItemViewModel.ExternalFileId)"
+                        HeaderText="Номер"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="false" />
+            <GridColumn Field="@nameof(ExportItemViewModel.FileName)"
+                        HeaderText="Номер"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="false" />
+            <GridColumn Field="@nameof(ExportItemViewModel.DateTimeGenerated)"
+                        HeaderText="Создан"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="false" />
+            <GridColumn Field="@nameof(ExportItemViewModel.FileReport.NonPriced)"
+                        HeaderText="Кол-во без цен"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="false" />
+            <GridColumn Field="@nameof(ExportItemViewModel.FileReport.NoBrandAndCategoryCount)"
+                        HeaderText="Кол-во без брендов и категорий"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="false" />
+            <GridColumn Field="@nameof(ExportItemViewModel.FileReport.ExcludedAsRepeatableCount)"
+                        HeaderText="Кол-во без исключенных повторов"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="false" />
+            <GridColumn Field="@nameof(ExportItemViewModel.IsSelectedStatus)"
+                        HeaderText="Статус"
+                        Width="100"
+                        AllowFiltering="true"
+                        AllowGrouping="false" />
+            <GridColumn HeaderText="Действия"
+                        Width="100">
+                <Template>
+                    @{
+                        var model = (ExportItemViewModel)context;
+                    }
+                    @if (model.IsSelected)
+                    {
+                        <SfProgressButton @ref="SelectBtn" OnClick="async () => await SignalBtnClick(model.ExternalFileId)" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-pencil" Content="Отправить Битриксу">
+                            <ProgressButtonSpinSettings Position="SpinPosition.Right" />
+                        </SfProgressButton>
+                    }
+                    else
+                    {
+                        <SfProgressButton @ref="SignalBtn" OnClick="async () => await SelectBtnClick(model.ExternalFileId)" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-pencil" Content="Выбрать">
+                            <ProgressButtonSpinSettings Position="SpinPosition.Right" />
+                        </SfProgressButton>
+                    }
+            </Template>
+            </GridColumn>
+        </GridColumns>
+    </SfGrid>
+
 @code{
+    SfGrid<ExportItemViewModel> DataGrid;
+
+    SfProgressButton ExportBtn;
+    SfProgressButton SelectBtn;
+    SfProgressButton SignalBtn;
+
+    private ExportItemViewModel[]? exports;
+
     private string? DownloadUrl { get; set; }
 
     private bool OperationProgress { get; set; } = false;
 
-    SfProgressButton ExportBtn;
+    protected override async Task OnInitializedAsync()
+    {
+        exports = await Http.GetFromJsonAsync<ExportItemViewModel[]>("Export/GetExports");
+    }
+
     private async Task ExportBtnClick()
     {
         OperationProgress = true;
@@ -41,5 +125,46 @@
         if (DownloadUrl == null){
             await DialogSerivce.AlertAsync("Не удалось экспортировать товары.", "Ошибка!");
         }
+        else
+        {
+            await Refresh();
+        }
+    }
+
+    private async Task SelectBtnClick(string externalFileId)
+    {
+        OperationProgress = true;
+        await SelectBtn.StartAsync();
+
+        var result = await Http.PostResultAsJsonAsync<bool, ExportFileViewModel>("Export/PerformSelection", new (){ ExternalFileId = externalFileId });
+        if (result)
+        {
+            await Refresh();
+        }
+
+        await SelectBtn.EndProgressAsync();
+        OperationProgress = false;
+    }
+
+    private async Task SignalBtnClick(string externalFileId)
+    {
+        OperationProgress = true;
+        await SignalBtn.StartAsync();
+
+        var result = await Http.PostResultAsJsonAsync<bool, ExportFileViewModel>("Export/SignalToBitrix", new() { ExternalFileId = externalFileId });
+        if (result)
+        {
+            await Refresh();
+        }
+
+        await SignalBtn.EndProgressAsync();
+        OperationProgress = false;
+    }
+
+    private async Task Refresh()
+    {
+        exports = await Http.GetFromJsonAsync<ExportItemViewModel[]>("Export/GetExports");
+        await InvokeAsync(StateHasChanged);
+        await DataGrid.Refresh();
     }
 }
