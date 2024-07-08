@@ -293,9 +293,11 @@ namespace Integrator.Logic
                     ExternalFileId = guidPart,
                     IsSelected = false,
                     Created = createdTime,
-                    ExcludedAsRepeatableCount = 0,
-                    NoBrandAndCategoryCount = 0,
-                    NonPriced = 0
+                    ExcludedAsRepeatableCount = cardIdsToExclude.Count,
+                    NoBrandAndCategoryCount = cardsToExport.Count(x => 
+                        string.IsNullOrEmpty(x.Brand) && 
+                        string.IsNullOrEmpty(x.SubCategory)),
+                    NonPriced = cardsToExport.Count(x => x.Price is null)
                 };
                 dataContext.Set<ExportItem>().Add(newDbItem);
 

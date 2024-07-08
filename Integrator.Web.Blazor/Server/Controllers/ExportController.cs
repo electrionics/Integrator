@@ -55,7 +55,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
         {
             var data = await _exportLogic.GetExports();
 
-            return data.Select(x => new ExportItemViewModel
+            var result = data.Select(x => new ExportItemViewModel
             {
                  ExternalFileId = x.ExternalFileId,
                  FileName = x.FileName,
@@ -68,6 +68,8 @@ namespace Integrator.Web.Blazor.Server.Controllers
                      NoBrandAndCategoryCount = x.NoBrandAndCategoryCount
                  }
             }).ToArray();
+
+            return result;
         }
 
         [HttpPost]

@@ -51,17 +51,17 @@
                         Width="100"
                         AllowFiltering="true"
                         AllowGrouping="false" />
-            <GridColumn Field="@nameof(ExportItemViewModel.FileReport.NonPriced)"
+            <GridColumn Field="FileReport.NonPriced"
                         HeaderText="Кол-во без цен"
                         Width="100"
                         AllowFiltering="true"
                         AllowGrouping="false" />
-            <GridColumn Field="@nameof(ExportItemViewModel.FileReport.NoBrandAndCategoryCount)"
+            <GridColumn Field="FileReport.NoBrandAndCategoryCount"
                         HeaderText="Кол-во без брендов и категорий"
                         Width="100"
                         AllowFiltering="true"
                         AllowGrouping="false" />
-            <GridColumn Field="@nameof(ExportItemViewModel.FileReport.ExcludedAsRepeatableCount)"
+            <GridColumn Field="FileReport.ExcludedAsRepeatableCount"
                         HeaderText="Кол-во без исключенных повторов"
                         Width="100"
                         AllowFiltering="true"
@@ -79,7 +79,7 @@
                     }
                     @if (model.IsSelected)
                     {
-                        <SfProgressButton @ref="SelectBtn" OnClick="async () => await SignalBtnClick(model.ExternalFileId)" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-pencil" Content="Отправить Битриксу">
+                        <SfProgressButton @ref="SelectBtn" OnClick="async () => await SignalBtnClick(model.ExternalFileId)" IsPrimary="true" @bind-Disabled="@OperationProgress" IconCss="oi oi-pencil" CssClass="e-success" Content="Отправить Битриксу">
                             <ProgressButtonSpinSettings Position="SpinPosition.Right" />
                         </SfProgressButton>
                     }
