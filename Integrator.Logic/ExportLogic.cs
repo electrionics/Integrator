@@ -13,6 +13,7 @@ using Integrator.Data.Entities;
 using Integrator.Logic.Export;
 using Integrator.Shared;
 using Integrator.Shared.FluentImpex;
+using System.IO;
 
 namespace Integrator.Logic
 {
@@ -323,6 +324,32 @@ namespace Integrator.Logic
 
         #endregion
 
+        #region Чтение файла экспорта
+
+        public async Task<byte[]?> ReadExportFile(string? externalFileId)
+        {
+            try
+            {
+                var exportItem = await dataContext.Set<ExportItem>().AsNoTracking()
+                    .FirstAsync(x => externalFileId == null ? x.IsSelected : x.ExternalFileId == externalFileId);
+
+                var filePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, appConfig.RootFolder, "exports", exportItem.FileName);
+
+                return File.ReadAllBytes(filePath);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Выбранный файл не существует.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Необработанная ошибка.");
+            }
+
+            return null;
+        }
+
+        #endregion
 
         #region Вспомогательные методы
 

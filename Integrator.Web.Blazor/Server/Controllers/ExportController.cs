@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http.Timeouts;
 using Integrator.Web.Blazor.Shared;
 using Integrator.Logic;
 using Integrator.Logic.Export;
+using Integrator.Shared;
 
 namespace Integrator.Web.Blazor.Server.Controllers
 {
@@ -31,11 +32,13 @@ namespace Integrator.Web.Blazor.Server.Controllers
 
         private readonly ExportLogic _exportLogic;
         private readonly ILogger<ExportController> _logger;
+        private readonly ApplicationConfig _applicationConfig;
 
-        public ExportController(ExportLogic exportLogic, ILogger<ExportController> logger)
+        public ExportController(ExportLogic exportLogic, ILogger<ExportController> logger, ApplicationConfig applicationConfig)
         {
             _exportLogic = exportLogic;
             _logger = logger;
+            _applicationConfig = applicationConfig;
         }
 
         [HttpGet]
@@ -100,6 +103,28 @@ namespace Integrator.Web.Blazor.Server.Controllers
 
                 return false;
             }
+        }
+
+        [HttpGet]
+        [Route("/api/bitrix/file")]
+        public async Task<IActionResult> BitrixGetFile([FromHeader]string? externalFileId, [FromHeader] string? token)
+        {
+            if (token == null)
+            {
+                _logger.LogError("Попытка получения доступа к файлу без авторизационного токена.");
+
+                return Empty;
+            }
+            else if (token != _applicationConfig.BitrixAuthToken)
+            {
+                _logger.LogError("Попытка получения доступа к файлу с невалидным токеном.");
+
+                return Empty;
+            }
+
+            var result = await _exportLogic.ReadExportFile(externalFileId);
+
+            return File(result ?? [], "application/octet-stream");
         }
     }
 }
