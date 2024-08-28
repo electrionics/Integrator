@@ -164,7 +164,7 @@ namespace Integrator.Logic
 
             var cardsToAdd = new List<Card>();
             const int cardsBatchSize = 100;
-            foreach (DirectoryInfo cardDirectory in toponomyRootDirectory.GetDirectories("*", SearchOption.TopDirectoryOnly))
+            foreach (DirectoryInfo cardDirectory in toponomyRootDirectory.GetLeafDirectories())
             {
                 FileInfo? textFile;
                 try

@@ -109,7 +109,7 @@ namespace Integrator.Logic
             {
                 await httpClient.PostAsync(
                     appConfig.BitrixRelativeSignalUrl,
-                    JsonContent.Create<(string action, string filename)>(("forceImport", externalFileId)));
+                    JsonContent.Create<(string action, string externalFileId)>(("forceImport", externalFileId)));
 
                 return true;
             }
@@ -140,6 +140,8 @@ namespace Integrator.Logic
                     .Include(x => x.Similarities)
                     .Where(x => x.Detail != null && x.Images.Any())
                     .ToDictionaryAsync(x => x.Id);
+                var settings = await dataContext.Set<Settings>().AsNoTracking()
+                    .FirstOrDefaultAsync();
                 #endregion
 
                 _logger.LogInformation("Экспорт: данные получены");
@@ -218,6 +220,13 @@ namespace Integrator.Logic
                             Image8 = GetImageFullUrl(x.Value, 7, hostBaseUrl),
                             Image9 = GetImageFullUrl(x.Value, 8, hostBaseUrl),
                         };
+
+                        item.DetailTextType = settings?.ExportDetailTextType ?? item.DetailTextType;
+                        item.DetailText = settings?.ExportDetailText ?? item.DetailText;
+                        item.PreviewTextType = settings?.ExportPreviewTextType ?? item.PreviewTextType;
+                        item.PreviewText = settings?.ExportPreviewText ?? item.PreviewText;
+                        item.Country = settings?.ExportCountry ?? item.Country;
+                        item.Badge = settings?.ExportBadge ?? item.Badge;
 
                         item.Model = GetModelName(x.Value.Detail.Category, x.Value.Detail.Brand, item.Code);
                         item.Url = Transliterate(item.Model).Replace(" ", "_");

@@ -34,19 +34,19 @@ namespace Integrator.Logic.Export
         public string? PreviewPicture => Image1;
 
         [Name("IE_PREVIEW_TEXT")]
-        public string? PreviewText => "Самые популярные мировые бренды из Китая";
+        public string? PreviewText { get; set; } = "Самые популярные мировые бренды из Китая";
 
         [Name("IE_PREVIEW_TEXT_TYPE")]
-        public string PreviewTextType => "text";
+        public string PreviewTextType { get; set; } = "text";
 
         [Name("IE_DETAIL_PICTURE")]
         public string? DetailPicture => Image1;
 
         [Name("IE_DETAIL_TEXT")]
-        public string? DetailText => "Люксовое качество, товар проверен до отгрузки. Фото и видеоотчеты для клиента.";
+        public string? DetailText { get; set; } = "Люксовое качество, товар проверен до отгрузки. Фото и видеоотчеты для клиента.";
 
         [Name("IE_DETAIL_TEXT_TYPE")]
-        public string DetailTextType => "text";
+        public string DetailTextType { get; set; } = "text";
 
         [Name("IE_CODE")]
         public string Url { get; set; }
@@ -64,7 +64,7 @@ namespace Integrator.Logic.Export
         public decimal? SecondPrice => Price;
 
         [Name("IP_PROP873")]
-        public string Badge => "New";
+        public string Badge { get; set; } = "New";
 
         [Name("IP_PROP874")]
         public int? BrandCode { get; set; }
@@ -103,7 +103,7 @@ namespace Integrator.Logic.Export
         public string? Material => string.Empty;
 
         [Name("IP_PROP925")]
-        public string Country => "Китай";
+        public string Country { get; set; } = "Китай";
 
         [Name("IC_GROUP0")]
         public string? MainCategory => string.Empty;
