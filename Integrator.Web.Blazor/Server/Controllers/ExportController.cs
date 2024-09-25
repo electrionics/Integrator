@@ -95,7 +95,10 @@ namespace Integrator.Web.Blazor.Server.Controllers
         {
             try
             {
-                return await _exportLogic.SendCommandToRecipient(model.ExternalFileId!);
+                var result = await _exportLogic.SendCommandToRecipient(model.ExternalFileId!);
+                _logger.LogInformationIf(result, "Сигнал Битриксу отправлен успешно");
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -123,6 +126,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
             }
 
             var result = await _exportLogic.ReadExportFile(externalFileId);
+            _logger.LogInformationIf(result?.Length > 0, $"Файл с номером {externalFileId} отдан Битриксу по запросу. Всего байт: {result?.Length}.");
 
             return File(result ?? [], "application/octet-stream");
         }

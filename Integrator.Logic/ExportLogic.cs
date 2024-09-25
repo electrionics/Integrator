@@ -104,11 +104,13 @@ namespace Integrator.Logic
                 return false;
             
             using var httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri(appConfig.BitrixDomain!);
+            var baseUrl = new Uri(appConfig.BitrixDomain!);
+            var relativeUrl = new Uri(appConfig.BitrixRelativeSignalUrl!, UriKind.Relative);
+            var requestUrl = new Uri(baseUrl, relativeUrl);
             try
             {
                 await httpClient.PostAsync(
-                    appConfig.BitrixRelativeSignalUrl,
+                    requestUrl,
                     JsonContent.Create<(string Authorization, string action, string fileId)>((appConfig.BitrixAuthTokenValue!, "forceImport", externalFileId)));
 
                 return true;
