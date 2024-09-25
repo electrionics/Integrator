@@ -203,9 +203,11 @@ static ILogger<T> GetLogger<T>()
     return LoggerFactoryExtensions.CreateLogger<T>(loggerFactory);
 }
 
+#pragma warning disable CS8321 // Local function is declared but never used
 static int GetImageStreamHash(FileInfo imageFile)
 {
     return (new ImageHash().GetHash(imageFile.FullName)).GetHashCode();
 }
+#pragma warning restore CS8321 // Local function is declared but never used
 
 #endregion

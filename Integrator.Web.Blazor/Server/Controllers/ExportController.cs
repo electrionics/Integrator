@@ -115,7 +115,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
 
                 return Empty;
             }
-            else if (token != _applicationConfig.BitrixAuthToken)
+            else if (token != _applicationConfig.IntegratorAuthTokenValue)
             {
                 _logger.LogError("Попытка получения доступа к файлу с невалидным токеном.");
 

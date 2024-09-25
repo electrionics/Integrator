@@ -109,7 +109,7 @@ namespace Integrator.Logic
             {
                 await httpClient.PostAsync(
                     appConfig.BitrixRelativeSignalUrl,
-                    JsonContent.Create<(string action, string externalFileId)>(("forceImport", externalFileId)));
+                    JsonContent.Create<(string Authorization, string action, string fileId)>((appConfig.BitrixAuthTokenValue!, "forceImport", externalFileId)));
 
                 return true;
             }
@@ -124,7 +124,7 @@ namespace Integrator.Logic
 
         #region Создавние нового файла экспорта
 
-        public async Task<string> GenerateExportFile(string hostBaseUrl, ExportFileType fileType)
+        public async Task<string?> GenerateExportFile(string hostBaseUrl, ExportFileType fileType)
         {
             try
             {

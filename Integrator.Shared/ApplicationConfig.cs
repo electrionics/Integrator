@@ -2,7 +2,7 @@
 {
     public class ApplicationConfig
     {
-        public string RootFolder { get; set; }
+        public string? RootFolder { get; set; }
 
         public string? GoogleCredentialsPath { get; set; }
 
@@ -12,6 +12,8 @@
 
         public string? BitrixRelativeSignalUrl { get; set; }
 
-        public string BitrixAuthToken { get; set; }
+        public string? IntegratorAuthTokenValue { get; set; }
+
+        public string? BitrixAuthTokenValue { get; set; }
     }
 }
