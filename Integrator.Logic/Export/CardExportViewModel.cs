@@ -37,7 +37,7 @@ namespace Integrator.Logic.Export
         public string? PreviewText { get; set; } = "Самые популярные мировые бренды из Китая";
 
         [Name("IE_PREVIEW_TEXT_TYPE")]
-        public string PreviewTextType { get; set; } = "text";
+        public string PreviewTextType { get; set; } = "html";
 
         [Name("IE_DETAIL_PICTURE")]
         public string? DetailPicture => Image1;
@@ -46,7 +46,7 @@ namespace Integrator.Logic.Export
         public string? DetailText { get; set; } = "Люксовое качество, товар проверен до отгрузки. Фото и видеоотчеты для клиента.";
 
         [Name("IE_DETAIL_TEXT_TYPE")]
-        public string DetailTextType { get; set; } = "text";
+        public string DetailTextType { get; set; } = "html";
 
         [Name("IE_CODE")]
         public string Url { get; set; }

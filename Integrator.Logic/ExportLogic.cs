@@ -14,6 +14,8 @@ using Integrator.Logic.Export;
 using Integrator.Shared;
 using Integrator.Shared.FluentImpex;
 using System.IO;
+using System.Net.Http.Headers;
+using System.Text;
 
 namespace Integrator.Logic
 {
@@ -102,18 +104,26 @@ namespace Integrator.Logic
         {
             if (!appConfig.BitrixEnabled)
                 return false;
-            
-            using var httpClient = new HttpClient();
+
             var baseUrl = new Uri(appConfig.BitrixDomain!);
             var relativeUrl = new Uri(appConfig.BitrixRelativeSignalUrl!, UriKind.Relative);
             var requestUrl = new Uri(baseUrl, relativeUrl);
+
+            var authHeaderValue = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(
+                    ASCIIEncoding.ASCII.GetBytes($"{appConfig.BitrixAuthUsername}:{appConfig.BitrixAuthPassword}")));
+
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = authHeaderValue;
+                
             try
             {
-                await httpClient.PostAsync(
-                    requestUrl,
-                    JsonContent.Create<(string Authorization, string action, string fileId)>((appConfig.BitrixAuthTokenValue!, "forceImport", externalFileId)));
+                var content = JsonContent.Create<(
+                        string action,
+                        string fileId)>(("forceImport", externalFileId));
 
-                return true;
+                var response = await httpClient.PostAsync(requestUrl, content);
+
+                return response.IsSuccessStatusCode;
             }
             catch(Exception e)
             {
@@ -231,7 +241,7 @@ namespace Integrator.Logic
                         item.Badge = settings?.ExportBadge ?? item.Badge;
 
                         item.Model = GetModelName(x.Value.Detail.Category, x.Value.Detail.Brand, item.Code);
-                        item.Url = Transliterate(item.Model).Replace(" ", "_");
+                        item.Url = Transliterate(item.Model).Replace(" ", "-");
 
                         return item;
                     })

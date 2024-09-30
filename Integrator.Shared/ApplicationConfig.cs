@@ -14,6 +14,8 @@
 
         public string? IntegratorAuthTokenValue { get; set; }
 
-        public string? BitrixAuthTokenValue { get; set; }
+        public string? BitrixAuthUsername { get; set; }
+
+        public string? BitrixAuthPassword { get; set; }
     }
 }
