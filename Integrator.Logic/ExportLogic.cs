@@ -16,6 +16,7 @@ using Integrator.Shared.FluentImpex;
 using System.IO;
 using System.Net.Http.Headers;
 using System.Text;
+using System;
 
 namespace Integrator.Logic
 {
@@ -117,9 +118,8 @@ namespace Integrator.Logic
                 
             try
             {
-                var content = JsonContent.Create<(
-                        string action,
-                        string fileId)>(("forceImport", externalFileId));
+                var json = new { action = "forceImport", externalFileId = externalFileId };
+                var content = JsonContent.Create(json);
 
                 var response = await httpClient.PostAsync(requestUrl, content);
 
