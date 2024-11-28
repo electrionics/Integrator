@@ -97,6 +97,7 @@ namespace Integrator.Web.Blazor.Server.Controllers
             {
                 var result = await _exportLogic.SendCommandToRecipient(model.ExternalFileId!);
                 _logger.LogInformationIf(result, "Сигнал Битриксу отправлен успешно");
+                _logger.LogInformationIf(!result, $"Сигнал Битриксу отправлен с ошибкой: {model.ExternalFileId!}");
 
                 return result;
             }
